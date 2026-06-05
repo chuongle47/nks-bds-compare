@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống So Sánh Bất Động Sản NKS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f4f7f6; }
+        .theme-bg { background-color: #0077bb; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-gray-200 pb-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-gray-900">Hệ thống Đối Chiếu & So Sánh BĐS</h1>
+                <p class="text-gray-500 mt-1">Dữ liệu thời gian thực đồng bộ qua Proxy</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <button id="compareBtn" class="theme-bg text-white font-bold px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 transition cursor-pointer hidden">
+                    📊 Xem Bảng So Sánh (<span id="compareCount">0</span>)
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-col md:flex-row gap-3 items-center">
+            <span class="font-bold text-gray-700 whitespace-nowrap">Nguồn cổng dữ liệu:</span>
+            <div id="statusIndicator" class="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 font-semibold">
+                🟢 Sẵn sàng
+            </div>
+            <button id="loadApiBtn" class="bg-gray-800 text-white font-semibold px-4 py-2 rounded-lg hover:bg-gray-900 cursor-pointer text-sm whitespace-nowrap">Đồng_Bộ_Lại</button>
+        </div>
+
+        <div id="propertiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="col-span-full text-center py-12 text-gray-500">Nhấn "Đồng bộ lại" để lấy dữ liệu.</div>
+        </div>
+
+        <div id="comparisonSection" class="bg-white rounded-xl shadow-lg p-6 overflow-hidden hidden border border-gray-100">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-900">📊 Bảng Đối Chiếu</h2>
+                <button id="closeCompareBtn" class="text-gray-400 hover:text-gray-600 text-sm font-semibold">❌ Đóng</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-200 text-sm">
+                    <thead><tr id="tableHead" class="bg-gray-50 text-gray-700"></tr></thead>
+                    <tbody id="tableBody" class="text-gray-600"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allProperties = [];
+        let selectedIds = [];
+
+        async function fetchProperties() {
+            const grid = document.getElementById('propertiesGrid');
+            const status = document.getElementById('statusIndicator');
+            
+            grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500">Đang tải dữ liệu từ Proxy...</div>`;
+            status.innerText = "⏳ Đang kết nối...";
+
+            try {
+                const response = await fetch('/api/proxy', { method: 'POST' });
+                const data = await response.json();
+
+                // --- ĐOẠN CODE "PHÒNG THỦ" FIX LỖI MAP ---
+                console.log("Dữ liệu thô:", data); // Kiểm tra trong F12 Console
+                
+                if (Array.isArray(data)) {
+                    allProperties = data;
+                } else if (data && typeof data === 'object') {
+                    // Tự động tìm mảng trong object (thường nằm ở key 'data' hoặc 'items')
+                    allProperties = data.data || data.items || [];
+                } else {
+                    allProperties = [];
+                }
+                // ------------------------------------------
+
+                if (allProperties.length === 0) {
+                    throw new Error("Không tìm thấy dữ liệu bất động sản nào.");
+                }
+
+                status.innerText = "🟢 Đồng bộ thành công";
+                renderProperties();
+            } catch (error) {
+                status.innerText = "🔴 Lỗi: " + error.message;
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-500 font-bold">${error.message}</div>`;
+            }
+        }
+
+        function renderProperties() {
+            const grid = document.getElementById('propertiesGrid');
+            grid.innerHTML = allProperties.map(item => `
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <img src="${item.image || 'https://via.placeholder.com/300x200'}" class="w-full h-40 object-cover rounded-lg mb-3">
+                    <h3 class="font-bold text-lg truncate">${item.title || 'Không tiêu đề'}</h3>
+                    <p class="text-blue-600 font-bold mb-2">${item.price_label || 'Liên hệ'}</p>
+                    <button onclick="toggleSelect('${item.id}')" class="w-full py-2 rounded-lg border font-semibold hover:bg-gray-50 transition">
+                        ${selectedIds.includes(item.id) ? '✅ Đã chọn' : '➕ So sánh'}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function toggleSelect(id) {
+            const index = selectedIds.indexOf(id);
+            if (index > -1) selectedIds.splice(index, 1);
+            else if (selectedIds.length < 4) selectedIds.push(id);
+            else alert('Chỉ chọn tối đa 4!');
+            
+            renderProperties();
+            
+            const btn = document.getElementById('compareBtn');
+            btn.classList.toggle('hidden', selectedIds.length === 0);
+            document.getElementById('compareCount').innerText = selectedIds.length;
+        }
+
+        function generateCompareTable() {
+            const head = document.getElementById('tableHead');
+            const body = document.getElementById('tableBody');
+            const items = allProperties.filter(p => selectedIds.includes(p.id));
+            
+            head.innerHTML = `<th>Thông số</th>` + items.map(p => `<th class="p-3">${p.title}</th>`).join('');
+            
+            const fields = [{l: 'Giá', k: 'price_label'}, {l: 'Diện tích', k: 'area'}, {l: 'Loại', k: 'type'}];
+            body.innerHTML = fields.map(f => `
+                <tr class="border-b">
+                    <td class="p-3 font-bold bg-gray-50">${f.l}</td>
+                    ${items.map(p => `<td class="p-3">${p[f.k] || '-'}</td>`).join('')}
+                </tr>
+            `).join('');
+        }
+
+        document.getElementById('compareBtn').addEventListener('click', () => {
+            document.getElementById('comparisonSection').classList.remove('hidden');
+            generateCompareTable();
+        });
+        document.getElementById('closeCompareBtn').addEventListener('click', () => document.getElementById('comparisonSection').classList.add('hidden'));
+        document.getElementById('loadApiBtn').addEventListener('click', fetchProperties);
+        window.onload = fetchProperties;
+    </script>
+</body>
+</html>
