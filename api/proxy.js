@@ -15,24 +15,16 @@ export default async function handler(req, res) {
     }
     const data = await response.json();
 
-    // --- Chuẩn hóa cấu trúc về { data: [...] } ---
     let items = [];
-    if (Array.isArray(data))            items = data;           // trả thẳng array
-    else if (Array.isArray(data.data))  items = data.data;      // { data: [...] }
-    else if (Array.isArray(data.items)) items = data.items;     // { items: [...] }
-    else if (Array.isArray(data.results)) items = data.results; // { results: [...] }
-    else {
-      // Log để debug nếu vẫn sai
-      console.log('Cấu trúc API lạ:', JSON.stringify(data).slice(0, 200));
-    }
+    if (Array.isArray(data))              items = data;
+    else if (Array.isArray(data.data))    items = data.data;
+    else if (Array.isArray(data.items))   items = data.items;
+    else if (Array.isArray(data.results)) items = data.results;
 
-    // --- Chuẩn hóa field ảnh ---
-    // API NKS có thể dùng nhiều tên field khác nhau cho ảnh
+    // Map đúng tên field: featureimg → featuring
     items = items.map(item => ({
       ...item,
-      featuring: item.featuring || item.image || item.thumbnail
-               || item.photo   || item.img    || item.avatar
-               || item.cover   || item.feature_image || null
+      featuring: item.featureimg || null
     }));
 
     res.status(200).json({ data: items });
