@@ -74,6 +74,7 @@
                 if (!response.ok) throw new Error('Proxy không phản hồi');
 
                 const data = await response.json();
+                console.log("Dữ liệu từ API:", data);
                 allProperties = data; 
                 
                 status.innerText = "🟢 Đồng bộ thành công";
