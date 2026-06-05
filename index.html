@@ -8,6 +8,7 @@
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #f4f7f6; }
         .theme-bg { background-color: #0077bb; }
+        .selected-card { border: 2px solid #0077bb; background-color: #f0f7ff; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -16,7 +17,7 @@
         <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-gray-200 pb-4">
             <div>
                 <h1 class="text-3xl font-extrabold text-gray-900">Hệ thống Đối Chiếu & So Sánh BĐS</h1>
-                <p class="text-gray-500 mt-1">Dữ liệu thời gian thực được đồng bộ từ hệ thống dữ liệu sạch NKS</p>
+                <p class="text-gray-500 mt-1">Dữ liệu thời gian thực đồng bộ qua Proxy Vercel</p>
             </div>
             <div class="mt-4 md:mt-0">
                 <button id="compareBtn" class="theme-bg text-white font-bold px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 transition cursor-pointer hidden">
@@ -26,22 +27,21 @@
         </div>
 
         <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-col md:flex-row gap-3 items-center">
-            <span class="font-bold text-gray-700 whitespace-nowrap">Nguồn cổng dữ liệu:</span>
-            <div id="statusIndicator" class="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-green-700 font-semibold">
-                🟢 Đang chờ kết nối...
+            <span class="font-bold text-gray-700 whitespace-nowrap">Trạng thái:</span>
+            <div id="statusIndicator" class="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 font-semibold">
+                🟢 Chờ đồng bộ...
             </div>
             <button id="loadApiBtn" class="bg-gray-800 text-white font-semibold px-4 py-2 rounded-lg hover:bg-gray-900 cursor-pointer text-sm whitespace-nowrap">Đồng_Bộ_Lại</button>
         </div>
 
-        <h2 class="text-xl font-bold text-gray-800 mb-4">🏠 Danh sách Bất Động Sản khả dụng</h2>
+        <h2 class="text-xl font-bold text-gray-800 mb-4">🏠 Danh sách Bất Động Sản</h2>
         <div id="propertiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <div class="col-span-full text-center py-12 text-gray-500 font-medium">Nhấn "Đồng bộ lại" để lấy dữ liệu.</div>
-        </div>
+            </div>
 
         <div id="comparisonSection" class="bg-white rounded-xl shadow-lg p-6 overflow-hidden hidden border border-gray-100">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2">📊 Bảng Đối Chiếu Thông Số Chi Tiết</h2>
-                <button id="closeCompareBtn" class="text-gray-400 hover:text-gray-600 text-sm font-semibold">❌ Đóng bảng</button>
+                <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2">📊 Bảng Đối Chiếu</h2>
+                <button id="closeCompareBtn" class="text-gray-400 hover:text-gray-600 text-sm font-semibold">❌ Đóng</button>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full border-collapse border border-gray-200">
@@ -56,45 +56,104 @@
         let allProperties = [];
         let selectedIds = [];
 
-        // Thay thế hàm fetchProperties cũ bằng đoạn này:
-async function fetchProperties() {
-    const grid = document.getElementById('propertiesGrid');
-    const status = document.getElementById('statusIndicator');
-    
-    try {
-        grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500">Đang đồng bộ qua Proxy...</div>`;
-        
-        // Gọi về chính server Vercel của bạn, tránh lỗi CORS
-        const response = await fetch('/api/proxy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({}) // Nếu cần gửi thêm params, điền vào đây
-        });
+        // 1. Hàm lấy dữ liệu qua Proxy
+        async function fetchProperties() {
+            const grid = document.getElementById('propertiesGrid');
+            const status = document.getElementById('statusIndicator');
+            
+            try {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500 animate-pulse">Đang tải dữ liệu...</div>`;
+                status.innerText = "⏳ Đang kết nối...";
 
-        if (!response.ok) throw new Error('Kết nối Proxy thất bại');
+                const response = await fetch('/api/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
 
-        const data = await response.json();
+                if (!response.ok) throw new Error('Proxy không phản hồi');
 
-        // Gán dữ liệu vào biến toàn cục
-        allProperties = data; 
-        
-        if (status) status.innerText = "🟢 Đồng bộ thành công";
-        renderProperties();
-    } catch (error) {
-        if (status) status.innerText = "🔴 Lỗi kết nối";
-        grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-500">
-            Lỗi đồng bộ: ${error.message}. 
-            (Proxy đã được thiết lập, hãy đảm bảo bạn đã Push code lên Git để Vercel cập nhật serverless function).
-        </div>`;
-    }
-}
+                const data = await response.json();
+                allProperties = data; 
+                
+                status.innerText = "🟢 Đồng bộ thành công";
+                renderProperties();
+            } catch (error) {
+                status.innerText = "🔴 Lỗi: " + error.message;
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-500 font-bold">Không thể tải dữ liệu. Vui lòng kiểm tra file api/proxy.js</div>`;
+            }
+        }
 
-        // --- CÁC HÀM RENDER (Giữ nguyên logic của bạn) ---
-        function renderProperties() { /* Giữ nguyên hàm render cũ */ }
-        function toggleSelect(id) { /* Giữ nguyên hàm toggle cũ */ }
-        function generateCompareTable() { /* Giữ nguyên hàm compare cũ */ }
+        // 2. Render lưới bất động sản
+        function renderProperties() {
+            const grid = document.getElementById('propertiesGrid');
+            grid.innerHTML = allProperties.map(item => `
+                <div id="card-${item.id}" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <img src="${item.image || 'https://via.placeholder.com/300x200'}" class="w-full h-40 object-cover rounded-lg mb-3">
+                    <h3 class="font-bold text-lg mb-1 truncate">${item.title || 'Không tiêu đề'}</h3>
+                    <p class="text-blue-600 font-bold mb-2">${item.price_label || 'Liên hệ'}</p>
+                    <button onclick="toggleSelect('${item.id}')" class="w-full py-2 rounded-lg border font-semibold hover:bg-gray-50 transition">
+                        ${selectedIds.includes(item.id) ? '✅ Đã chọn' : '➕ So sánh'}
+                    </button>
+                </div>
+            `).join('');
+        }
 
-        // Event Listeners
+        // 3. Logic chọn sản phẩm
+        function toggleSelect(id) {
+            const index = selectedIds.indexOf(id);
+            if (index > -1) {
+                selectedIds.splice(index, 1);
+            } else {
+                if (selectedIds.length < 4) {
+                    selectedIds.push(id);
+                } else {
+                    alert('Chỉ được chọn tối đa 4 sản phẩm để so sánh!');
+                    return;
+                }
+            }
+            
+            // Cập nhật giao diện nút
+            renderProperties();
+            
+            // Cập nhật nút so sánh chính
+            const btn = document.getElementById('compareBtn');
+            const count = document.getElementById('compareCount');
+            if (selectedIds.length > 0) {
+                btn.classList.remove('hidden');
+                count.innerText = selectedIds.length;
+            } else {
+                btn.classList.add('hidden');
+            }
+        }
+
+        // 4. Render bảng so sánh
+        function generateCompareTable() {
+            const head = document.getElementById('tableHead');
+            const body = document.getElementById('tableBody');
+            
+            const selectedItems = allProperties.filter(p => selectedIds.includes(p.id));
+            
+            // Header
+            head.innerHTML = `<th>Thông số</th>` + selectedItems.map(p => `<th class="p-3">${p.title}</th>`).join('');
+            
+            // Row mẫu
+            const attributes = [
+                { label: 'Giá bán', key: 'price_label' },
+                { label: 'Diện tích', key: 'area' },
+                { label: 'Loại hình', key: 'type' },
+                { label: 'Hướng', key: 'direction' }
+            ];
+            
+            body.innerHTML = attributes.map(attr => `
+                <tr class="border-b">
+                    <td class="p-3 font-bold bg-gray-50">${attr.label}</td>
+                    ${selectedItems.map(p => `<td class="p-3">${p[attr.key] || '-'}</td>`).join('')}
+                </tr>
+            `).join('');
+        }
+
+        // Events
         document.getElementById('compareBtn').addEventListener('click', () => {
             document.getElementById('comparisonSection').classList.remove('hidden');
             generateCompareTable();
