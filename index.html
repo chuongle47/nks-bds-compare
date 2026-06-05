@@ -58,9 +58,9 @@
         // Chuyển đổi link ảnh (Fix link Dropbox)
         function getImageUrl(url) {
             if (!url) return 'https://placehold.co/300x200?text=No+Image';
-            // Nếu là link dropbox, buộc nó thành raw để hiển thị
             if (url.includes('dropbox.com')) {
-                return url.replace('?dl=0', '').replace('dl=0', '') + '?raw=1';
+                // Xóa toàn bộ query string cũ, chỉ giữ ?raw=1
+                return url.split('?')[0] + '?raw=1';
             }
             return url;
         }
@@ -88,8 +88,9 @@
             grid.innerHTML = allProperties.map(item => `
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
                     <img src="${getImageUrl(item.featuring)}" 
-                         onerror="this.src='https://placehold.co/300x200?text=Error'" 
+                         onerror="this.onerror=null;this.src='https://placehold.co/300x200?text=No+Image'" 
                          class="w-full h-40 object-cover rounded-lg mb-3"
+                         crossorigin="anonymous"
                          alt="${item.title}">
                     <h3 class="font-bold text-lg truncate">${item.title || 'Không tiêu đề'}</h3>
                     <p class="text-blue-600 font-bold mb-2">${item.price_label || 'Liên hệ'}</p>
