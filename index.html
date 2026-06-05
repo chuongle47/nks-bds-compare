@@ -36,22 +36,43 @@
         <div id="propertiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <div class="col-span-full text-center py-12 text-gray-500">Nhấn "Đồng bộ lại" để lấy dữ liệu.</div>
         </div>
+
+        <div id="comparisonSection" class="bg-white rounded-xl shadow-lg p-6 overflow-hidden hidden border border-gray-100">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-900">📊 Bảng Đối Chiếu</h2>
+                <button id="closeCompareBtn" class="text-gray-400 hover:text-gray-600 text-sm font-semibold">❌ Đóng</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-200 text-sm">
+                    <thead><tr id="tableHead" class="bg-gray-50 text-gray-700"></tr></thead>
+                    <tbody id="tableBody" class="text-gray-600"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
         let allProperties = [];
         let selectedIds = [];
 
+        // Hàm xử lý link ảnh (Fix lỗi Dropbox)
+        function getRawImageUrl(url) {
+            if (!url) return 'https://placehold.co/300x200?text=No+Image';
+            // Nếu là link dropbox, đổi đuôi thành ?raw=1 để hiển thị trực tiếp
+            if (url.includes('dropbox.com')) {
+                return url.replace('?dl=0', '').replace('dl=0', '') + '?raw=1';
+            }
+            return url;
+        }
+
         async function fetchProperties() {
             const grid = document.getElementById('propertiesGrid');
             const status = document.getElementById('statusIndicator');
-            grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500">Đang tải dữ liệu...</div>`;
+            grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500">Đang tải...</div>`;
             
             try {
                 const response = await fetch('/api/proxy', { method: 'POST' });
                 const json = await response.json();
-                
-                // Dựa trên log, dữ liệu nằm trong json.data
                 allProperties = json.data || [];
                 status.innerText = "🟢 Đồng bộ thành công (" + allProperties.length + " mục)";
                 renderProperties();
@@ -63,24 +84,51 @@
 
         function renderProperties() {
             const grid = document.getElementById('propertiesGrid');
-            grid.innerHTML = allProperties.map(item => {
-                // Kiểm tra nếu featuring tồn tại và là link hợp lệ
-                const imgUrl = item.featuring ? item.featuring : 'https://placehold.co/300x200?text=No+Image';
-                
-                return `
+            grid.innerHTML = allProperties.map(item => `
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
-                    <img src="${imgUrl}" 
+                    <img src="${getRawImageUrl(item.featuring)}" 
                          onerror="this.src='https://placehold.co/300x200?text=Error'" 
                          class="w-full h-40 object-cover rounded-lg mb-3"
-                         alt="BĐS">
+                         alt="${item.title}">
                     <h3 class="font-bold text-lg truncate">${item.title || 'Không tiêu đề'}</h3>
-                    <button onclick="alert('Chi tiết: ${item.title}')" class="w-full mt-3 py-2 rounded-lg border font-semibold hover:bg-gray-50">
-                        Xem chi tiết
+                    <p class="text-blue-600 font-bold mb-2">${item.price_label || 'Liên hệ'}</p>
+                    <button onclick="toggleSelect('${item.id}')" class="w-full py-2 rounded-lg border font-semibold hover:bg-gray-50 transition">
+                        ${selectedIds.includes(item.id) ? '✅ Đã chọn' : '➕ So sánh'}
                     </button>
-                </div>`;
-            }).join('');
+                </div>
+            `).join('');
         }
 
+        function toggleSelect(id) {
+            const index = selectedIds.indexOf(id);
+            if (index > -1) selectedIds.splice(index, 1);
+            else if (selectedIds.length < 4) selectedIds.push(id);
+            else alert('Chỉ chọn tối đa 4!');
+            renderProperties();
+            
+            const btn = document.getElementById('compareBtn');
+            btn.classList.toggle('hidden', selectedIds.length === 0);
+            document.getElementById('compareCount').innerText = selectedIds.length;
+        }
+
+        function generateCompareTable() {
+            const head = document.getElementById('tableHead');
+            const body = document.getElementById('tableBody');
+            const items = allProperties.filter(p => selectedIds.includes(p.id));
+            
+            head.innerHTML = `<th>Thông số</th>` + items.map(p => `<th class="p-3">${p.title}</th>`).join('');
+            const fields = [{l: 'Giá', k: 'price_label'}, {l: 'Diện tích', k: 'area'}, {l: 'Loại', k: 'type'}];
+            body.innerHTML = fields.map(f => `
+                <tr class="border-b"><td class="p-3 font-bold bg-gray-50">${f.l}</td>
+                ${items.map(p => `<td class="p-3">${p[f.k] || '-'}</td>`).join('')}</tr>
+            `).join('');
+        }
+
+        document.getElementById('compareBtn').addEventListener('click', () => {
+            document.getElementById('comparisonSection').classList.remove('hidden');
+            generateCompareTable();
+        });
+        document.getElementById('closeCompareBtn').addEventListener('click', () => document.getElementById('comparisonSection').classList.add('hidden'));
         document.getElementById('loadApiBtn').addEventListener('click', fetchProperties);
         window.onload = fetchProperties;
     </script>
