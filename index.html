@@ -43,7 +43,7 @@
                 <button id="closeCompareBtn" class="text-gray-400 hover:text-gray-600 text-sm font-semibold">❌ Đóng</button>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full border-collapse border border-gray-200 text-sm">
+                <table class="w-full border-collapse border border-gray-200 text-sm text-left">
                     <thead><tr id="tableHead" class="bg-gray-50 text-gray-700"></tr></thead>
                     <tbody id="tableBody" class="text-gray-600"></tbody>
                 </table>
@@ -55,10 +55,10 @@
         let allProperties = [];
         let selectedIds = [];
 
-        // Hàm xử lý link ảnh (Fix lỗi Dropbox)
-        function getRawImageUrl(url) {
+        // Chuyển đổi link ảnh (Fix link Dropbox)
+        function getImageUrl(url) {
             if (!url) return 'https://placehold.co/300x200?text=No+Image';
-            // Nếu là link dropbox, đổi đuôi thành ?raw=1 để hiển thị trực tiếp
+            // Nếu là link dropbox, buộc nó thành raw để hiển thị
             if (url.includes('dropbox.com')) {
                 return url.replace('?dl=0', '').replace('dl=0', '') + '?raw=1';
             }
@@ -71,6 +71,7 @@
             grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500">Đang tải...</div>`;
             
             try {
+                // Giả định proxy API của bạn trả về data theo cấu trúc
                 const response = await fetch('/api/proxy', { method: 'POST' });
                 const json = await response.json();
                 allProperties = json.data || [];
@@ -86,7 +87,7 @@
             const grid = document.getElementById('propertiesGrid');
             grid.innerHTML = allProperties.map(item => `
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
-                    <img src="${getRawImageUrl(item.featuring)}" 
+                    <img src="${getImageUrl(item.featuring)}" 
                          onerror="this.src='https://placehold.co/300x200?text=Error'" 
                          class="w-full h-40 object-cover rounded-lg mb-3"
                          alt="${item.title}">
@@ -103,7 +104,8 @@
             const index = selectedIds.indexOf(id);
             if (index > -1) selectedIds.splice(index, 1);
             else if (selectedIds.length < 4) selectedIds.push(id);
-            else alert('Chỉ chọn tối đa 4!');
+            else alert('Chỉ chọn tối đa 4 bất động sản để so sánh!');
+            
             renderProperties();
             
             const btn = document.getElementById('compareBtn');
@@ -116,11 +118,19 @@
             const body = document.getElementById('tableBody');
             const items = allProperties.filter(p => selectedIds.includes(p.id));
             
-            head.innerHTML = `<th>Thông số</th>` + items.map(p => `<th class="p-3">${p.title}</th>`).join('');
-            const fields = [{l: 'Giá', k: 'price_label'}, {l: 'Diện tích', k: 'area'}, {l: 'Loại', k: 'type'}];
+            head.innerHTML = `<th class="p-3">Thông số</th>` + items.map(p => `<th class="p-3">${p.title}</th>`).join('');
+            
+            const fields = [
+                {l: 'Giá', k: 'price_label'}, 
+                {l: 'Diện tích', k: 'area'}, 
+                {l: 'Loại', k: 'type'}
+            ];
+            
             body.innerHTML = fields.map(f => `
-                <tr class="border-b"><td class="p-3 font-bold bg-gray-50">${f.l}</td>
-                ${items.map(p => `<td class="p-3">${p[f.k] || '-'}</td>`).join('')}</tr>
+                <tr class="border-b">
+                    <td class="p-3 font-bold bg-gray-50">${f.l}</td>
+                    ${items.map(p => `<td class="p-3">${p[f.k] || '-'}</td>`).join('')}
+                </tr>
             `).join('');
         }
 
@@ -128,7 +138,11 @@
             document.getElementById('comparisonSection').classList.remove('hidden');
             generateCompareTable();
         });
-        document.getElementById('closeCompareBtn').addEventListener('click', () => document.getElementById('comparisonSection').classList.add('hidden'));
+        
+        document.getElementById('closeCompareBtn').addEventListener('click', () => 
+            document.getElementById('comparisonSection').classList.add('hidden')
+        );
+        
         document.getElementById('loadApiBtn').addEventListener('click', fetchProperties);
         window.onload = fetchProperties;
     </script>
