@@ -56,46 +56,38 @@
         let allProperties = [];
         let selectedIds = [];
 
-        async function fetchProperties() {
-            const grid = document.getElementById('propertiesGrid');
-            const status = document.getElementById('statusIndicator');
-            
-            try {
-                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500 font-medium animate-pulse">Đang tải dữ liệu từ API NKS...</div>`;
-                status.innerText = "⏳ Đang kết nối API...";
+        // Thay thế hàm fetchProperties cũ bằng đoạn này:
+async function fetchProperties() {
+    const grid = document.getElementById('propertiesGrid');
+    const status = document.getElementById('statusIndicator');
+    
+    try {
+        grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500">Đang đồng bộ qua Proxy...</div>`;
+        
+        // Gọi về chính server Vercel của bạn, tránh lỗi CORS
+        const response = await fetch('/api/proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}) // Nếu cần gửi thêm params, điền vào đây
+        });
 
-                const response = await fetch('https://online.nks.vn/api/nks/rsitems', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({}) // Thêm params vào đây nếu API yêu cầu
-                });
+        if (!response.ok) throw new Error('Kết nối Proxy thất bại');
 
-                if (!response.ok) throw new Error('Kết nối API thất bại');
+        const data = await response.json();
 
-                const data = await response.json();
-
-                // MAP DỮ LIỆU: Đảm bảo tên các trường trong code khớp với dữ liệu trả về từ API
-                // Nếu API trả về mảng trực tiếp thì dùng 'data', nếu có bọc trong key khác thì chỉnh lại
-                allProperties = data.map(item => ({
-                    id: item.id || Math.random(),
-                    title: item.title || "Chưa có tiêu đề",
-                    price_label: item.price_label || "Liên hệ",
-                    area: item.area || "0",
-                    type: item.type || "N/A",
-                    direction: item.direction || "N/A",
-                    beds: item.beds || "0",
-                    baths: item.baths || "0",
-                    address: item.address || "Chưa cập nhật",
-                    image: item.image || "https://via.placeholder.com/600x400"
-                }));
-
-                status.innerText = "🟢 Đã đồng bộ thành công";
-                renderProperties();
-            } catch (error) {
-                status.innerText = "🔴 Lỗi kết nối";
-                grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-500 font-medium">Không thể tải dữ liệu. Vui lòng kiểm tra lại quyền CORS của API.</div>`;
-            }
-        }
+        // Gán dữ liệu vào biến toàn cục
+        allProperties = data; 
+        
+        if (status) status.innerText = "🟢 Đồng bộ thành công";
+        renderProperties();
+    } catch (error) {
+        if (status) status.innerText = "🔴 Lỗi kết nối";
+        grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-500">
+            Lỗi đồng bộ: ${error.message}. 
+            (Proxy đã được thiết lập, hãy đảm bảo bạn đã Push code lên Git để Vercel cập nhật serverless function).
+        </div>`;
+    }
+}
 
         // --- CÁC HÀM RENDER (Giữ nguyên logic của bạn) ---
         function renderProperties() { /* Giữ nguyên hàm render cũ */ }
