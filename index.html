@@ -92,18 +92,27 @@
         }
 
         function renderProperties() {
-            const grid = document.getElementById('propertiesGrid');
-            grid.innerHTML = allProperties.map(item => `
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                    <img src="${item.image || 'https://via.placeholder.com/300x200'}" class="w-full h-40 object-cover rounded-lg mb-3">
-                    <h3 class="font-bold text-lg truncate">${item.title || 'Không tiêu đề'}</h3>
-                    <p class="text-blue-600 font-bold mb-2">${item.price_label || 'Liên hệ'}</p>
-                    <button onclick="toggleSelect('${item.id}')" class="w-full py-2 rounded-lg border font-semibold hover:bg-gray-50 transition">
-                        ${selectedIds.includes(item.id) ? '✅ Đã chọn' : '➕ So sánh'}
-                    </button>
-                </div>
-            `).join('');
-        }
+    const grid = document.getElementById('propertiesGrid');
+    
+    // Kiểm tra nếu allProperties là mảng
+    if (!Array.isArray(allProperties)) return;
+
+    grid.innerHTML = allProperties.map(item => `
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+            <img src="${item.featuring || 'https://via.placeholder.com/300x200'}" 
+                 onerror="this.src='https://via.placeholder.com/300x200'" 
+                 class="w-full h-40 object-cover rounded-lg mb-3"
+                 alt="${item.title}">
+            
+            <h3 class="font-bold text-lg truncate">${item.title || 'Không tiêu đề'}</h3>
+            <p class="text-blue-600 font-bold mb-2">${item.price_label || 'Liên hệ'}</p>
+            
+            <button onclick="toggleSelect('${item.id}')" class="w-full py-2 rounded-lg border font-semibold hover:bg-gray-50 transition">
+                ${selectedIds.includes(item.id) ? '✅ Đã chọn' : '➕ So sánh'}
+            </button>
+        </div>
+    `).join('');
+}
 
         function toggleSelect(id) {
             const index = selectedIds.indexOf(id);
