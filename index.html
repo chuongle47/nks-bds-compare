@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống So Sánh Bất Động Sản NKS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f4f7f6; }
+        .theme-bg { background-color: #0077bb; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-gray-200 pb-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-gray-900">Hệ thống Đối Chiếu & So Sánh BĐS</h1>
+                <p class="text-gray-500 mt-1">Dữ liệu thời gian thực được đồng bộ trực tiếp từ NKS Core</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <button id="compareBtn" class="theme-bg text-white font-bold px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 transition cursor-pointer hidden">
+                    📊 Xem Bảng So Sánh (<span id="compareCount">0</span>)
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-col md:flex-row gap-3 items-center">
+            <span class="font-bold text-gray-700 whitespace-nowrap">Đường dẫn nguồn dữ liệu:</span>
+            <input type="text" id="apiUrlInput" class="w-full p-2 border border-gray-300 rounded-lg text-sm text-gray-600 focus:outline-none focus:border-blue-500" value="https://nksbds.page.gd/wp-json/nks/v1/properties">
+            <button id="loadApiBtn" class="bg-gray-800 text-white font-semibold px-4 py-2 rounded-lg hover:bg-gray-900 cursor-pointer text-sm">Tải_Lại_Data</button>
+        </div>
+
+        <h2 class="text-xl font-bold text-gray-800 mb-4">🏠 Danh sách Bất Động Sản khả dụng</h2>
+        <div id="propertiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="col-span-full text-center py-12 text-gray-500 font-medium animate-pulse">Đang nạp dữ liệu trực tiếp từ nguồn WordPress...</div>
+        </div>
+
+        <div id="comparisonSection" class="bg-white rounded-xl shadow-lg p-6 overflow-hidden hidden border border-gray-100">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2">📊 Bảng Đối Chiếu Thông Số Chi Tiết</h2>
+                <button id="closeCompareBtn" class="text-gray-400 hover:text-gray-600 text-sm font-semibold">❌ Đóng bảng</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-200">
+                    <thead>
+                        <tr id="tableHead" class="bg-gray-50 text-gray-700">
+                            <th class="border border-gray-200 p-3 text-left font-bold w-1/4">Tiêu chí đối chiếu</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="text-gray-600 text-sm">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allProperties = [];
+        let selectedIds = [];
+
+        async function fetchProperties() {
+            const grid = document.getElementById('propertiesGrid');
+            const apiUrl = document.getElementById('apiUrlInput').value;
+            
+            try {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500 font-medium animate-pulse">Đang kết nối cổng dữ liệu...</div>`;
+                
+                // Gọi dữ liệu trực tiếp từ cổng API cục bộ với cờ thiết lập tiêu đề mở rộng
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Cổng phản hồi lỗi');
+                allProperties = await response.json();
+                renderProperties();
+            } catch (error) {
+                grid.innerHTML = `
+                    <div class="col-span-full bg-red-50 text-red-700 p-4 rounded-xl text-center border border-red-200">
+                        <p class="font-bold">⚠️ Chưa vượt được hàng rào bảo mật dữ liệu cục bộ!</p>
+                        <p class="text-sm mt-1">Vui lòng kiểm tra lại tiện ích <b>CORS Unblock</b>, tích chọn vào ô có dấu <b>*</b> rồi bấm nút <b>Tải_Lại_Data</b>.</p>
+                    </div>`;
+            }
+        }
+
+        function renderProperties() {
+            const grid = document.getElementById('propertiesGrid');
+            if (!allProperties || allProperties.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500">Cổng dữ liệu trống hoặc chưa hoàn tất đồng bộ từ bảng quản trị.</div>`;
+                return;
+            }
+
+            grid.innerHTML = allProperties.map(item => {
+                const isChecked = selectedIds.includes(item.id) ? 'checked' : '';
+                return `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition relative flex flex-col justify-between">
+                        <div>
+                            <div class="h-48 w-full bg-gray-100 relative">
+                                <img src="${item.image || 'https://placehold.co/600x400?text=NKS'}" class="w-full h-full object-cover" alt="${item.title}">
+                                <span class="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded font-medium">${item.type || 'BĐS'}</span>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-bold text-gray-800 line-clamp-2 h-12 text-sm mb-2">${item.title}</h3>
+                                <p class="text-sm text-gray-400 mb-3 truncate">📍 ${item.address}</p>
+                                <div class="flex flex-wrap gap-2 text-xs text-gray-600 mb-2">
+                                    <span class="bg-gray-100 px-2 py-1 rounded">📐 ${item.area ? item.area + ' m²' : 'Chưa rõ'}</span>
+                                    <span class="bg-gray-100 px-2 py-1 rounded">🧭 Hướng: ${item.direction || 'Không rõ'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 pt-0 border-t border-gray-50 mt-auto flex justify-between items-center">
+                            <span class="text-xl font-extrabold text-blue-600">${item.price_label || 'Thỏa thuận'}</span>
+                            <label class="inline-flex items-center gap-2 bg-gray-50 px-3 py-1.5 border border-gray-200 rounded-lg cursor-pointer select-none hover:bg-blue-5">
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded cursor-pointer" onchange="toggleSelect(${item.id})" ${isChecked}>
+                                <span class="text-xs font-bold text-gray-700">So sánh</span>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleSelect(id) {
+            const index = selectedIds.indexOf(id);
+            if (index > -1) { selectedIds.splice(index, 1); } else { selectedIds.push(id); }
+            const compareBtn = document.getElementById('compareBtn');
+            const compareCount = document.getElementById('compareCount');
+            if (selectedIds.length > 0) {
+                compareBtn.classList.remove('hidden');
+                compareCount.innerText = selectedIds.length;
+            } else {
+                compareBtn.classList.add('hidden');
+                document.getElementById('comparisonSection').classList.add('hidden');
+            }
+            if (!document.getElementById('comparisonSection').classList.contains('hidden')) { generateCompareTable(); }
+        }
+
+        function generateCompareTable() {
+            const selectedItems = allProperties.filter(item => selectedIds.includes(item.id));
+            const thead = document.getElementById('tableHead');
+            const tbody = document.getElementById('tableBody');
+
+            thead.innerHTML = `<th class="border border-gray-200 p-3 text-left font-bold bg-gray-100 text-gray-700 w-1/4">Tiêu chí đối chiếu</th>` + 
+                selectedItems.map(item => `
+                    <th class="border border-gray-200 p-3 text-center w-1/4">
+                        <img src="${item.image}" class="w-24 h-16 object-cover mx-auto rounded mb-2 shadow-sm">
+                        <div class="font-bold text-gray-900 text-xs line-clamp-2">${item.title}</div>
+                    </th>
+                `).join('');
+
+            const criteria = [
+                { label: '💰 Giá bán', key: 'price_label' },
+                { label: '📐 Diện tích', key: 'area' },
+                { label: '🏢 Loại hình', key: 'type' },
+                { label: '🧭 Hướng nhà', key: 'direction' },
+                { label: '🛏️ Số phòng ngủ', key: 'beds', suffix: ' phòng' },
+                { label: '🛀 Số phòng tắm', key: 'baths', suffix: ' phòng' },
+                { label: '📍 Vị trí / Địa chỉ', key: 'address' }
+            ];
+
+            tbody.innerHTML = criteria.map(crit => `
+                <tr class="hover:bg-gray-50/80 transition">
+                    <td class="border border-gray-200 p-3 font-bold bg-gray-50 text-gray-700">${crit.label}</td>
+                    ${selectedItems.map(item => {
+                        let value = item[crit.key] || 'Chưa cập nhật';
+                        if (item[crit.key] && crit.suffix) value += crit.suffix;
+                        const isPrice = crit.key === 'price_label' ? 'text-blue-600 font-extrabold text-base' : '';
+                        return `<td class="border border-gray-200 p-3 text-center ${isPrice}">${value}</td>`;
+                    }).join('')}
+                </tr>
+            `).join('');
+        }
+
+        document.getElementById('compareBtn').addEventListener('click', () => {
+            document.getElementById('comparisonSection').classList.remove('hidden');
+            generateCompareTable();
+            document.getElementById('comparisonSection').scrollIntoView({ behavior: 'smooth' });
+        });
+        document.getElementById('closeCompareBtn').addEventListener('click', () => { document.getElementById('comparisonSection').classList.add('hidden'); });
+        document.getElementById('loadApiBtn').addEventListener('click', fetchProperties);
+        window.onload = fetchProperties;
+    </script>
+</body>
+</html>
