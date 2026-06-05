@@ -63,24 +63,15 @@
             status.innerText = "⏳ Đang kết nối...";
 
             try {
+                // Proxy yêu cầu POST
                 const response = await fetch('/api/proxy', { method: 'POST' });
-                const data = await response.json();
+                const json = await response.json();
 
-                // --- ĐOẠN CODE "PHÒNG THỦ" FIX LỖI MAP ---
-                console.log("Dữ liệu thô:", data); // Kiểm tra trong F12 Console
-                
-                if (Array.isArray(data)) {
-                    allProperties = data;
-                } else if (data && typeof data === 'object') {
-                    // Tự động tìm mảng trong object (thường nằm ở key 'data' hoặc 'items')
-                    allProperties = data.data || data.items || [];
+                // Kiểm tra cấu trúc dữ liệu dựa trên log
+                if (json && json.data && Array.isArray(json.data)) {
+                    allProperties = json.data;
                 } else {
-                    allProperties = [];
-                }
-                // ------------------------------------------
-
-                if (allProperties.length === 0) {
-                    throw new Error("Không tìm thấy dữ liệu bất động sản nào.");
+                    throw new Error("Dữ liệu không đúng định dạng (không tìm thấy mảng 'data')");
                 }
 
                 status.innerText = "🟢 Đồng bộ thành công";
@@ -92,27 +83,32 @@
         }
 
         function renderProperties() {
-    const grid = document.getElementById('propertiesGrid');
-    
-    // Kiểm tra nếu allProperties là mảng
-    if (!Array.isArray(allProperties)) return;
+            const grid = document.getElementById('propertiesGrid');
+            if (!Array.isArray(allProperties)) return;
 
-    grid.innerHTML = allProperties.map(item => `
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <img src="${item.featuring || 'https://via.placeholder.com/300x200'}" 
-                 onerror="this.src='https://via.placeholder.com/300x200'" 
-                 class="w-full h-40 object-cover rounded-lg mb-3"
-                 alt="${item.title}">
-            
-            <h3 class="font-bold text-lg truncate">${item.title || 'Không tiêu đề'}</h3>
-            <p class="text-blue-600 font-bold mb-2">${item.price_label || 'Liên hệ'}</p>
-            
-            <button onclick="toggleSelect('${item.id}')" class="w-full py-2 rounded-lg border font-semibold hover:bg-gray-50 transition">
-                ${selectedIds.includes(item.id) ? '✅ Đã chọn' : '➕ So sánh'}
-            </button>
-        </div>
-    `).join('');
-}
+            grid.innerHTML = allProperties.map(item => {
+                // Xử lý ảnh: dùng featuring, fallback về placehold.co
+                const imageUrl = (item.featuring && item.featuring.startsWith('http')) 
+                                 ? item.featuring 
+                                 : 'https://placehold.co/300x200?text=No+Image';
+
+                return `
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <img src="${imageUrl}" 
+                         onerror="this.src='https://placehold.co/300x200?text=Error'" 
+                         class="w-full h-40 object-cover rounded-lg mb-3"
+                         alt="${item.title || 'Bất động sản'}">
+                    
+                    <h3 class="font-bold text-lg truncate">${item.title || 'Không tiêu đề'}</h3>
+                    <p class="text-blue-600 font-bold mb-2">${item.price_label || 'Liên hệ'}</p>
+                    
+                    <button onclick="toggleSelect('${item.id}')" class="w-full py-2 rounded-lg border font-semibold hover:bg-gray-50 transition">
+                        ${selectedIds.includes(item.id) ? '✅ Đã chọn' : '➕ So sánh'}
+                    </button>
+                </div>
+                `;
+            }).join('');
+        }
 
         function toggleSelect(id) {
             const index = selectedIds.indexOf(id);
