@@ -3,149 +3,671 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống So Sánh Bất Động Sản NKS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>NKS — Hệ thống So Sánh Bất Động Sản</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f4f7f6; }
-        .theme-bg { background-color: #0077bb; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --blue:      #0077bb;
+            --blue-dk:   #005a8e;
+            --blue-lt:   #e8f4fd;
+            --blue-mid:  #cce4f6;
+            --gold:      #c9993a;
+            --text:      #0d1b2a;
+            --text-2:    #2d4157;
+            --muted:     #6b8094;
+            --border:    #dde6ee;
+            --bg:        #f5f8fb;
+            --white:     #ffffff;
+            --shadow:    0 2px 12px rgba(0,119,187,.08);
+            --shadow-lg: 0 12px 48px rgba(0,0,0,.10);
+            --r:         12px;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── HEADER ── */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(255,255,255,.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-inner {
+            max-width: 1360px; margin: auto;
+            padding: 0 clamp(16px,4vw,48px);
+            height: 62px;
+            display: flex; align-items: center; gap: 16px;
+        }
+
+        .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .logo-mark {
+            width: 36px; height: 36px; border-radius: 8px;
+            background: var(--blue);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -1px;
+        }
+        .logo-name { font-size: 15px; font-weight: 600; color: var(--text); }
+        .logo-sub  { font-size: 11px; color: var(--muted); font-weight: 400; }
+
+        .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+        .status-pill {
+            display: flex; align-items: center; gap: 7px;
+            padding: 5px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-size: 12px; color: var(--muted); font-weight: 500;
+        }
+        .status-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34,197,94,.2);
+            flex-shrink: 0;
+        }
+        .status-dot.loading { background: var(--gold); box-shadow: 0 0 0 3px rgba(201,153,58,.2); animation: pulse .9s infinite; }
+        .status-dot.error   { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.2); animation: none; }
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 18px; border-radius: 8px;
+            font-family: inherit; font-size: 13px; font-weight: 600;
+            cursor: pointer; border: none; transition: all .18s;
+            text-decoration: none; white-space: nowrap;
+        }
+        .btn-primary { background: var(--blue); color: #fff; }
+        .btn-primary:hover { background: var(--blue-dk); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,119,187,.3); }
+        .btn-ghost { background: var(--white); color: var(--text-2); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: var(--bg); border-color: var(--blue); color: var(--blue); }
+        .btn-compare { background: var(--blue); color: #fff; }
+        .btn-compare:hover { background: var(--blue-dk); }
+
+        .compare-badge {
+            background: var(--gold); color: #fff;
+            border-radius: 999px; padding: 1px 7px;
+            font-size: 11px; font-weight: 700;
+        }
+
+        /* ── MAIN ── */
+        main {
+            max-width: 1360px; margin: auto;
+            padding: clamp(20px,4vw,48px) clamp(16px,4vw,48px);
+        }
+
+        /* ── TOOLBAR ── */
+        .toolbar {
+            display: flex; align-items: center; gap: 10px;
+            flex-wrap: wrap; margin-bottom: 28px;
+        }
+
+        .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 360px; }
+        .search-icon {
+            position: absolute; left: 12px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted); pointer-events: none;
+            width: 15px; height: 15px;
+        }
+        .search-input {
+            width: 100%; padding: 9px 12px 9px 36px;
+            border: 1.5px solid var(--border); border-radius: 8px;
+            font-size: 13px; font-family: inherit; color: var(--text);
+            background: var(--white); outline: none; transition: all .18s;
+        }
+        .search-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,119,187,.10); }
+
+        .filter-select {
+            padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+            font-size: 13px; font-family: inherit; color: var(--text-2);
+            background: var(--white); cursor: pointer; outline: none; transition: all .18s;
+            min-width: 140px;
+        }
+        .filter-select:focus { border-color: var(--blue); }
+
+        .result-count { margin-left: auto; font-size: 13px; color: var(--muted); }
+        .result-count strong { color: var(--blue); font-weight: 700; }
+
+        /* ── COMPARE PANEL ── */
+        .compare-panel {
+            background: var(--white);
+            border: 1.5px solid var(--blue-mid);
+            border-radius: var(--r);
+            overflow: hidden;
+            margin-bottom: 28px;
+            box-shadow: var(--shadow);
+            display: none;
+        }
+        .compare-panel.visible { display: block; animation: slideDown .3s ease; }
+        @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+
+        .compare-panel-head {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, var(--blue-lt), var(--blue-mid));
+            border-bottom: 1.5px solid var(--blue-mid);
+        }
+        .compare-panel-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 19px; font-weight: 700; color: var(--blue-dk);
+        }
+        .btn-close-compare {
+            background: none; border: 1px solid var(--blue-mid);
+            font-size: 12px; font-weight: 600; color: var(--muted);
+            cursor: pointer; padding: 5px 12px; border-radius: 6px;
+            font-family: inherit; transition: all .18s;
+        }
+        .btn-close-compare:hover { background: var(--white); color: var(--text); }
+
+        .compare-scroll { overflow-x: auto; }
+
+        .compare-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
+        .compare-table thead th {
+            padding: 13px 20px; text-align: left;
+            border-bottom: 2px solid var(--border);
+            background: var(--bg); color: var(--muted);
+            font-weight: 600; white-space: nowrap;
+        }
+        .compare-table thead th:first-child {
+            background: var(--blue-lt); color: var(--blue-dk);
+            min-width: 110px;
+        }
+        .compare-table tbody td {
+            padding: 11px 20px; border-bottom: 1px solid var(--border);
+            color: var(--text-2); vertical-align: top;
+        }
+        .compare-table tbody tr:last-child td { border-bottom: none; }
+        .compare-table tbody tr:hover td { background: var(--bg); }
+        .compare-table .row-label {
+            font-weight: 700; color: var(--muted);
+            background: var(--blue-lt) !important;
+            border-right: 1.5px solid var(--blue-mid);
+            font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+        }
+        .compare-prop-name { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.4; }
+        .compare-table thead small { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+
+        /* ── GRID ── */
+        .properties-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(235px,100%), 1fr));
+            gap: 22px;
+        }
+
+        /* ── CARD ── */
+        .card {
+            background: var(--white);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r);
+            overflow: hidden;
+            transition: transform .22s, box-shadow .22s, border-color .22s;
+            animation: cardUp .4s ease both;
+            display: flex; flex-direction: column;
+        }
+        .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--blue-mid); }
+        .card.selected { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,119,187,.12); }
+
+        @keyframes cardUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-img-wrap {
+            position: relative; width: 100%; height: 170px;
+            overflow: hidden; background: var(--blue-lt);
+            flex-shrink: 0;
+        }
+        .card-img-wrap::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,.22) 0%, transparent 55%);
+        }
+        .card-img { width: 100%; height: 100%; object-fit: cover; transition: transform .45s; display: block; }
+        .card:hover .card-img { transform: scale(1.06); }
+
+        .card-selected-badge {
+            position: absolute; top: 10px; right: 10px; z-index: 2;
+            background: var(--blue); color: #fff;
+            font-size: 11px; font-weight: 700;
+            padding: 3px 10px; border-radius: 999px;
+            box-shadow: 0 2px 8px rgba(0,119,187,.4);
+        }
+        .card-type-badge {
+            position: absolute; bottom: 10px; left: 10px; z-index: 2;
+            background: rgba(255,255,255,.90); color: var(--blue-dk);
+            font-size: 11px; font-weight: 700;
+            padding: 3px 9px; border-radius: 6px;
+            backdrop-filter: blur(4px);
+        }
+
+        .card-body { padding: 15px 16px 16px; display: flex; flex-direction: column; flex: 1; }
+
+        .card-title {
+            font-size: 14px; font-weight: 600;
+            color: var(--text); line-height: 1.45;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden; min-height: 41px; margin-bottom: 7px;
+        }
+
+        .card-price {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 19px; font-weight: 700;
+            color: var(--blue); margin-bottom: 10px;
+        }
+
+        .card-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 13px; flex: 1; }
+
+        .tag {
+            font-size: 11px; font-weight: 500;
+            background: var(--blue-lt); color: var(--blue-dk);
+            padding: 3px 9px; border-radius: 999px;
+            border: 1px solid var(--blue-mid);
+        }
+
+        .btn-select {
+            width: 100%; padding: 9px;
+            border: 1.5px solid var(--border); border-radius: 8px;
+            background: var(--bg); color: var(--muted);
+            font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all .18s; font-family: inherit;
+        }
+        .btn-select:hover { background: var(--blue-lt); color: var(--blue-dk); border-color: var(--blue); }
+        .btn-select.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+        /* ── SKELETON ── */
+        .skeleton { animation: shimmer 1.3s infinite; }
+        @keyframes shimmer { 0%,100%{opacity:.4} 50%{opacity:.7} }
+        .sk-img  { width:100%; height:170px; background:var(--border); }
+        .sk-line { height:12px; background:var(--border); border-radius:4px; margin-bottom:8px; }
+        .sk-line.w60 { width:60%; }
+        .sk-line.w80 { width:80%; }
+        .sk-btn  { height:34px; background:var(--border); border-radius:8px; margin-top:12px; }
+
+        /* ── EMPTY ── */
+        .state-empty {
+            grid-column: 1/-1; text-align: center;
+            padding: 60px 20px; color: var(--muted);
+        }
+        .state-empty .icon { font-size: 40px; margin-bottom: 14px; }
+
+        /* ── FLOAT BAR ── */
+        .float-bar {
+            position: fixed; bottom: 24px; left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--white);
+            border: 2px solid var(--blue);
+            border-radius: 999px;
+            padding: 11px 24px;
+            display: flex; align-items: center; gap: 14px;
+            box-shadow: 0 8px 40px rgba(0,119,187,.20);
+            transition: transform .32s cubic-bezier(.34,1.56,.64,1);
+            z-index: 9999; white-space: nowrap;
+        }
+        .float-bar.visible { transform: translateX(-50%) translateY(0); }
+
+        .float-text { font-size: 13px; color: var(--muted); }
+        .float-text strong { color: var(--blue); font-weight: 700; font-size: 15px; }
+
+        .float-compare-btn {
+            background: var(--blue); color: #fff;
+            border: none; padding: 9px 20px; border-radius: 999px;
+            font-size: 13px; font-weight: 700; cursor: pointer;
+            font-family: inherit; transition: background .18s;
+            box-shadow: 0 3px 12px rgba(0,119,187,.3);
+        }
+        .float-compare-btn:hover { background: var(--blue-dk); }
+
+        .float-clear-btn {
+            background: none; border: none; color: var(--muted);
+            cursor: pointer; font-size: 13px; font-family: inherit;
+            padding: 4px 8px; border-radius: 6px; transition: all .18s;
+        }
+        .float-clear-btn:hover { color: #ef4444; background: #fef2f2; }
+
+        /* ── TOAST ── */
+        #nks-toast {
+            position: fixed; bottom: 88px; left: 50%;
+            transform: translateX(-50%);
+            background: var(--text); color: #fff;
+            padding: 10px 20px; border-radius: 999px;
+            font-size: 13px; z-index: 9999;
+            opacity: 0; transition: opacity .25s; pointer-events: none;
+            white-space: nowrap;
+        }
+        #nks-toast.show { opacity: 1; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 600px) {
+            .toolbar { gap: 8px; }
+            .search-wrap { max-width: 100%; }
+            .filter-select { min-width: 110px; }
+            .float-bar { border-radius: 16px; padding: 12px 16px; gap: 10px; flex-wrap: wrap; justify-content: center; width: calc(100% - 24px); bottom: 12px; }
+        }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body>
 
-    <div class="max-w-7xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-gray-200 pb-4">
+<!-- HEADER -->
+<header>
+    <div class="header-inner">
+        <a class="logo" href="#">
+            <div class="logo-mark">N</div>
             <div>
-                <h1 class="text-3xl font-extrabold text-gray-900">Hệ thống Đối Chiếu & So Sánh BĐS</h1>
-                <p class="text-gray-500 mt-1">Dữ liệu thời gian thực đồng bộ qua Proxy</p>
+                <div class="logo-name">NKS Property</div>
+                <div class="logo-sub">Hệ thống Đối Chiếu Bất Động Sản</div>
             </div>
-            <div class="mt-4 md:mt-0">
-                <button id="compareBtn" class="theme-bg text-white font-bold px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 transition cursor-pointer hidden">
-                    📊 Xem Bảng So Sánh (<span id="compareCount">0</span>)
-                </button>
+        </a>
+        <div class="header-right">
+            <div class="status-pill">
+                <div class="status-dot loading" id="statusDot"></div>
+                <span id="statusText">Đang tải...</span>
             </div>
+            <button class="btn btn-ghost" onclick="fetchProperties()" id="syncBtn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                Đồng bộ
+            </button>
+            <button class="btn btn-compare" id="compareBtn" style="display:none" onclick="scrollToCompare()">
+                📊 So sánh <span class="compare-badge" id="compareCount">0</span>
+            </button>
         </div>
+    </div>
+</header>
 
-        <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-col md:flex-row gap-3 items-center">
-            <span class="font-bold text-gray-700 whitespace-nowrap">Nguồn cổng dữ liệu:</span>
-            <div id="statusIndicator" class="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 font-semibold">
-                🟢 Sẵn sàng
-            </div>
-            <button id="loadApiBtn" class="bg-gray-800 text-white font-semibold px-4 py-2 rounded-lg hover:bg-gray-900 cursor-pointer text-sm whitespace-nowrap">Đồng_Bộ_Lại</button>
+<main>
+    <!-- COMPARE PANEL -->
+    <div class="compare-panel" id="comparePanel">
+        <div class="compare-panel-head">
+            <div class="compare-panel-title">📊 Bảng Đối Chiếu Bất Động Sản</div>
+            <button class="btn-close-compare" onclick="closeCompare()">✕ Đóng</button>
         </div>
-
-        <div id="propertiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <div class="col-span-full text-center py-12 text-gray-500">Nhấn "Đồng bộ lại" để lấy dữ liệu.</div>
-        </div>
-
-        <div id="comparisonSection" class="bg-white rounded-xl shadow-lg p-6 overflow-hidden hidden border border-gray-100">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-gray-900">📊 Bảng Đối Chiếu</h2>
-                <button id="closeCompareBtn" class="text-gray-400 hover:text-gray-600 text-sm font-semibold">❌ Đóng</button>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full border-collapse border border-gray-200 text-sm text-left">
-                    <thead><tr id="tableHead" class="bg-gray-50 text-gray-700"></tr></thead>
-                    <tbody id="tableBody" class="text-gray-600"></tbody>
-                </table>
-            </div>
+        <div class="compare-scroll">
+            <table class="compare-table">
+                <thead><tr id="compareHead"></tr></thead>
+                <tbody id="compareBody"></tbody>
+            </table>
         </div>
     </div>
 
-    <script>
-        let allProperties = [];
-        let selectedIds = [];
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+        <div class="search-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="searchInput" class="search-input"
+                   placeholder="Tìm kiếm BĐS, địa chỉ..." oninput="applyFilter()">
+        </div>
+        <select id="filterType" class="filter-select" onchange="applyFilter()">
+            <option value="">Tất cả loại</option>
+        </select>
+        <select id="sortBy" class="filter-select" onchange="applyFilter()">
+            <option value="">Sắp xếp</option>
+            <option value="price-asc">Giá tăng dần</option>
+            <option value="price-desc">Giá giảm dần</option>
+            <option value="area-asc">Diện tích tăng</option>
+            <option value="area-desc">Diện tích giảm</option>
+        </select>
+        <span class="result-count" id="resultCount"></span>
+    </div>
 
-        // Chuyển đổi link ảnh (Fix link Dropbox)
-        function getImageUrl(url) {
-            if (!url) return 'https://placehold.co/300x200?text=No+Image';
-            if (url.includes('dropbox.com')) {
-                // Xóa toàn bộ query string cũ, chỉ giữ ?raw=1
-                return url.split('?')[0] + '?raw=1';
-            }
-            return url;
+    <!-- GRID -->
+    <div class="properties-grid" id="propertiesGrid">
+        <!-- skeleton -->
+        ${Array(8).fill(0).map(() => `
+        <div class="card skeleton">
+            <div class="sk-img"></div>
+            <div style="padding:15px 16px">
+                <div class="sk-line w80"></div>
+                <div class="sk-line w60"></div>
+                <div class="sk-btn"></div>
+            </div>
+        </div>`).join('')}
+    </div>
+</main>
+
+<!-- FLOAT BAR -->
+<div class="float-bar" id="floatBar">
+    <span class="float-text">Đã chọn <strong id="floatCount">0</strong>/4 BĐS</span>
+    <button class="float-compare-btn" onclick="scrollToCompare()">📊 So sánh ngay</button>
+    <button class="float-clear-btn" onclick="clearSelection()">✕ Xóa</button>
+</div>
+
+<div id="nks-toast"></div>
+
+<script>
+    let allData     = [];
+    let filtered    = [];
+    let selected    = [];
+    const PROXY     = '/api/proxy';
+    const IMG_PROXY = '/api/image';
+    const NO_IMG    = 'https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS';
+
+    // ── Helpers ──────────────────────────────────────────────
+
+    function imgUrl(url) {
+        if (!url) return NO_IMG;
+        return IMG_PROXY + '?url=' + encodeURIComponent(url);
+    }
+
+    function setStatus(state, msg) {
+        const dot  = document.getElementById('statusDot');
+        const text = document.getElementById('statusText');
+        dot.className  = 'status-dot ' + (state === 'loading' ? 'loading' : state === 'error' ? 'error' : '');
+        text.textContent = msg;
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('nks-toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(t._t);
+        t._t = setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    function updateCompareUI() {
+        const n   = selected.length;
+        const btn = document.getElementById('compareBtn');
+        document.getElementById('compareCount').textContent = n;
+        document.getElementById('floatCount').textContent   = n;
+        btn.style.display = n > 0 ? 'inline-flex' : 'none';
+        document.getElementById('floatBar').classList.toggle('visible', n > 0);
+    }
+
+    // ── Fetch ────────────────────────────────────────────────
+
+    async function fetchProperties() {
+        setStatus('loading', 'Đang đồng bộ...');
+        document.getElementById('syncBtn').disabled = true;
+        renderSkeleton();
+
+        try {
+            const res  = await fetch(PROXY, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const json = await res.json();
+
+            // Chuẩn hóa cấu trúc
+            let items = [];
+            if (Array.isArray(json) && json[0])         items = json;
+            else if (Array.isArray(json.data))           items = json.data;
+            else if (Array.isArray(json.items))          items = json.items;
+            else if (Array.isArray(json.List))           items = json.List;
+
+            // Map field featureimg → featuring
+            allData = items.map(i => ({
+                ...i,
+                featuring: i.featureimg || i.featuring || i.image || null
+            }));
+
+            // Build loại filter
+            const types = [...new Set(allData.map(i => i.rstype).filter(Boolean))].sort();
+            const sel   = document.getElementById('filterType');
+            sel.innerHTML = '<option value="">Tất cả loại</option>'
+                + types.map(t => `<option value="${t}">${t}</option>`).join('');
+
+            setStatus('ok', `${allData.length} bất động sản`);
+            applyFilter();
+        } catch (err) {
+            setStatus('error', 'Lỗi: ' + err.message);
+            document.getElementById('propertiesGrid').innerHTML =
+                `<div class="state-empty"><div class="icon">⚠️</div><p style="color:#ef4444">${err.message}</p><p style="margin-top:8px;font-size:13px">Kiểm tra endpoint <code>/api/proxy</code></p></div>`;
+        } finally {
+            document.getElementById('syncBtn').disabled = false;
+        }
+    }
+
+    // ── Filter & Sort ────────────────────────────────────────
+
+    function applyFilter() {
+        const q    = document.getElementById('searchInput').value.toLowerCase().trim();
+        const type = document.getElementById('filterType').value;
+        const sort = document.getElementById('sortBy').value;
+
+        filtered = allData.filter(item => {
+            const matchQ = !q || (item.title||'').toLowerCase().includes(q) || (item.address||'').toLowerCase().includes(q);
+            const matchT = !type || item.rstype === type;
+            return matchQ && matchT;
+        });
+
+        if (sort === 'price-asc')  filtered.sort((a,b) => (a.price||0) - (b.price||0));
+        if (sort === 'price-desc') filtered.sort((a,b) => (b.price||0) - (a.price||0));
+        if (sort === 'area-asc')   filtered.sort((a,b) => (a.total_area||0) - (b.total_area||0));
+        if (sort === 'area-desc')  filtered.sort((a,b) => (b.total_area||0) - (a.total_area||0));
+
+        document.getElementById('resultCount').innerHTML =
+            `Hiển thị <strong>${filtered.length}</strong> / ${allData.length} tin`;
+
+        renderCards();
+    }
+
+    // ── Render ───────────────────────────────────────────────
+
+    function renderSkeleton() {
+        document.getElementById('propertiesGrid').innerHTML = Array(8).fill(0).map(() => `
+            <div class="card skeleton">
+                <div class="sk-img"></div>
+                <div style="padding:15px 16px">
+                    <div class="sk-line w80"></div>
+                    <div class="sk-line w60"></div>
+                    <div class="sk-btn"></div>
+                </div>
+            </div>`).join('');
+    }
+
+    function renderCards() {
+        const grid = document.getElementById('propertiesGrid');
+
+        if (!filtered.length) {
+            grid.innerHTML = `<div class="state-empty"><div class="icon">🔍</div><p>Không tìm thấy kết quả phù hợp.</p></div>`;
+            return;
         }
 
-        async function fetchProperties() {
-            const grid = document.getElementById('propertiesGrid');
-            const status = document.getElementById('statusIndicator');
-            grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500">Đang tải...</div>`;
-            
-            try {
-                // Giả định proxy API của bạn trả về data theo cấu trúc
-                const response = await fetch('/api/proxy', { method: 'POST' });
-                const json = await response.json();
-                allProperties = json.data || [];
-                status.innerText = "🟢 Đồng bộ thành công (" + allProperties.length + " mục)";
-                renderProperties();
-            } catch (error) {
-                status.innerText = "🔴 Lỗi API";
-                grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-500">Lỗi: ${error.message}</div>`;
-            }
-        }
+        grid.innerHTML = filtered.map((item, i) => {
+            const on  = selected.includes(String(item.id));
+            const img = imgUrl(item.featuring);
+            const price = item.formatedPrice || item.price_label || 'Liên hệ';
+            const area  = item.total_area ? item.total_area + ' m²' : null;
 
-        function renderProperties() {
-            const grid = document.getElementById('propertiesGrid');
-            grid.innerHTML = allProperties.map(item => `
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
-                    <img src="${getImageUrl(item.featuring)}" 
-                         onerror="this.onerror=null;this.src='https://placehold.co/300x200?text=No+Image'" 
-                         class="w-full h-40 object-cover rounded-lg mb-3"
-                         crossorigin="anonymous"
-                         alt="${item.title}">
-                    <h3 class="font-bold text-lg truncate">${item.title || 'Không tiêu đề'}</h3>
-                    <p class="text-blue-600 font-bold mb-2">${item.price_label || 'Liên hệ'}</p>
-                    <button onclick="toggleSelect('${item.id}')" class="w-full py-2 rounded-lg border font-semibold hover:bg-gray-50 transition">
-                        ${selectedIds.includes(item.id) ? '✅ Đã chọn' : '➕ So sánh'}
+            return `<div class="card${on?' selected':''}" style="animation-delay:${Math.min(i,15)*35}ms">
+                <div class="card-img-wrap">
+                    <img class="card-img" src="${img}" alt="${item.title||''}" loading="lazy"
+                         onerror="this.onerror=null;this.src='${NO_IMG}'">
+                    ${on ? '<span class="card-selected-badge">✓ Đã chọn</span>' : ''}
+                    ${item.rstype ? `<span class="card-type-badge">${item.rstype}</span>` : ''}
+                </div>
+                <div class="card-body">
+                    <div class="card-title">${item.title || 'Không có tiêu đề'}</div>
+                    <div class="card-price">${price}</div>
+                    <div class="card-meta">
+                        ${area ? `<span class="tag">📐 ${area}</span>` : ''}
+                        ${item.bed  ? `<span class="tag">🛏 ${item.bed} PN</span>` : ''}
+                        ${item.bath ? `<span class="tag">🚿 ${item.bath} PT</span>` : ''}
+                        ${item.direction ? `<span class="tag">🧭 ${item.direction}</span>` : ''}
+                    </div>
+                    <button class="btn-select${on?' active':''}" onclick="toggleSelect('${item.id}')">
+                        ${on ? '✓ Bỏ chọn' : '+ So sánh'}
                     </button>
                 </div>
-            `).join('');
-        }
+            </div>`;
+        }).join('');
+    }
 
-        function toggleSelect(id) {
-            const index = selectedIds.indexOf(id);
-            if (index > -1) selectedIds.splice(index, 1);
-            else if (selectedIds.length < 4) selectedIds.push(id);
-            else alert('Chỉ chọn tối đa 4 bất động sản để so sánh!');
-            
-            renderProperties();
-            
-            const btn = document.getElementById('compareBtn');
-            btn.classList.toggle('hidden', selectedIds.length === 0);
-            document.getElementById('compareCount').innerText = selectedIds.length;
-        }
+    // ── Select ───────────────────────────────────────────────
 
-        function generateCompareTable() {
-            const head = document.getElementById('tableHead');
-            const body = document.getElementById('tableBody');
-            const items = allProperties.filter(p => selectedIds.includes(p.id));
-            
-            head.innerHTML = `<th class="p-3">Thông số</th>` + items.map(p => `<th class="p-3">${p.title}</th>`).join('');
-            
-            const fields = [
-                {l: 'Giá', k: 'price_label'}, 
-                {l: 'Diện tích', k: 'area'}, 
-                {l: 'Loại', k: 'type'}
-            ];
-            
-            body.innerHTML = fields.map(f => `
-                <tr class="border-b">
-                    <td class="p-3 font-bold bg-gray-50">${f.l}</td>
-                    ${items.map(p => `<td class="p-3">${p[f.k] || '-'}</td>`).join('')}
-                </tr>
-            `).join('');
+    function toggleSelect(id) {
+        id = String(id);
+        const idx = selected.indexOf(id);
+        if (idx > -1) {
+            selected.splice(idx, 1);
+        } else {
+            if (selected.length >= 4) { showToast('Chỉ chọn tối đa 4 BĐS để so sánh!'); return; }
+            selected.push(id);
         }
+        updateCompareUI();
+        renderCards();
+    }
 
-        document.getElementById('compareBtn').addEventListener('click', () => {
-            document.getElementById('comparisonSection').classList.remove('hidden');
-            generateCompareTable();
-        });
-        
-        document.getElementById('closeCompareBtn').addEventListener('click', () => 
-            document.getElementById('comparisonSection').classList.add('hidden')
-        );
-        
-        document.getElementById('loadApiBtn').addEventListener('click', fetchProperties);
-        window.onload = fetchProperties;
-    </script>
+    function clearSelection() {
+        selected = [];
+        closeCompare();
+        updateCompareUI();
+        renderCards();
+    }
+
+    // ── Compare ──────────────────────────────────────────────
+
+    function scrollToCompare() {
+        buildCompareTable();
+        const panel = document.getElementById('comparePanel');
+        panel.classList.add('visible');
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function closeCompare() {
+        document.getElementById('comparePanel').classList.remove('visible');
+    }
+
+    function buildCompareTable() {
+        const items  = allData.filter(d => selected.includes(String(d.id)));
+        const fields = [
+            { l: 'Giá',        k: 'formatedPrice' },
+            { l: 'Diện tích',  k: 'total_area',   fmt: v => v ? v + ' m²' : '—' },
+            { l: 'Loại BĐS',   k: 'rstype' },
+            { l: 'Phòng ngủ',  k: 'bed' },
+            { l: 'Phòng tắm',  k: 'bath' },
+            { l: 'Hướng',      k: 'direction' },
+            { l: 'Địa chỉ',    k: 'address' },
+            { l: 'Điện thoại', k: 'phone' },
+        ];
+
+        document.getElementById('compareHead').innerHTML =
+            '<th class="row-label">Tiêu chí</th>'
+            + items.map(i => `<th><div class="compare-prop-name">${i.title||'—'}</div><small>#${i.id}</small></th>`).join('');
+
+        document.getElementById('compareBody').innerHTML =
+            fields.map(f => `<tr>
+                <td class="row-label">${f.l}</td>
+                ${items.map(i => {
+                    const val = i[f.k];
+                    const display = f.fmt ? f.fmt(val) : (val || '—');
+                    return `<td>${display}</td>`;
+                }).join('')}
+            </tr>`).join('');
+    }
+
+    // ── Init ─────────────────────────────────────────────────
+    fetchProperties();
+</script>
 </body>
 </html>
