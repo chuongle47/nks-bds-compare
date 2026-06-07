@@ -448,14 +448,14 @@
     let filtered    = [];
     let selected    = [];
     const PROXY     = '/api/proxy';
-    const IMG_PROXY = '/api/image';
+    
     const NO_IMG    = 'https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS';
 
     // ── Helpers ──────────────────────────────────────────────
 
     function imgUrl(url) {
         if (!url) return NO_IMG;
-        return IMG_PROXY + '?url=' + encodeURIComponent(url);
+        return '/api/proxy?img=' + encodeURIComponent(url);
     }
 
     function setStatus(state, msg) {
@@ -575,7 +575,7 @@
 
         grid.innerHTML = filtered.map((item, i) => {
             const on  = selected.includes(String(item.id));
-            const img = imgUrl(item.featuring);
+            const img = item.imgProxy || imgUrl(item.featuring);
             const price = item.formatedPrice || item.price_label || 'Liên hệ';
             const area  = item.total_area ? item.total_area + ' m²' : null;
 
