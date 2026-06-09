@@ -35,8 +35,7 @@ export default async function handler(req, res) {
   // ── LẤY DỮ LIỆU (POST): Đọc kho dữ liệu sạch từ cổng REST API WordPress của bạn ──
   if (req.method === 'POST') {
     try {
-      // CHÚ Ý: Bạn hãy thay "https://web-cua-ban.com" bằng tên miền WordPress của bạn
-      const targetUrl = 'https://web-cua-ban.com/wp-json/nks/v1/properties';
+      const targetUrl = 'https://nksbds.page.gd/wp-json/nks/v1/properties';
 
       const response = await fetch(targetUrl, {
         method: 'GET', // Chuyển thành GET để gọi cổng REST API trên WordPress
