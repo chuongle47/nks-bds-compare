@@ -1,60 +1,48 @@
 /**
- * File: api/proxy.js
- * Chức năng: 
- * 1. GET /api/proxy?img=URL -> Proxy ảnh.
- * 2. GET/POST /api/proxy -> Lấy dữ liệu từ WordPress API.
+ * API Proxy cho NKS Property
+ * Xử lý: Proxy ảnh và Lấy dữ liệu BĐS từ WordPress
  */
 
 export default async function handler(req, res) {
-  // 1. Cấu hình CORS (Cho phép frontend gọi từ mọi nguồn)
+  // 1. Cấu hình CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
 
+  // Xử lý preflight request
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // 2. PROXY ẢNH
+  // 2. PROXY ẢNH (GET /api/proxy?img=...)
   if (req.method === 'GET' && req.query.img) {
-    const url = decodeURIComponent(req.query.img);
-    const allowed = ['dropbox.com', 'nks.vn', 'data.nks.vn', 'online.nks.vn'];
-    
-    if (!allowed.some(d => url.includes(d))) {
-      return res.status(403).json({ error: 'Domain không được phép' });
-    }
-
     try {
+      const url = decodeURIComponent(req.query.img);
       const imgRes = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
       if (!imgRes.ok) throw new Error();
       
       const buffer = Buffer.from(await imgRes.arrayBuffer());
       res.setHeader('Content-Type', imgRes.headers.get('content-type') || 'image/jpeg');
-      res.setHeader('Cache-Control', 'public, max-age=86400');
       return res.send(buffer);
     } catch (err) {
       return res.redirect(302, 'https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS');
     }
   }
 
-  // 3. LẤY DỮ LIỆU TỪ WORDPRESS
-  // Sử dụng try-catch bao quát để đảm bảo luôn trả về dữ liệu cho frontend
+  // 3. LẤY DỮ LIỆU WORDPRESS (Hỗ trợ cả POST và GET từ frontend)
   try {
     const response = await fetch('https://nksbds.page.gd/wp-json/nks/v1/properties', {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
 
-    if (!response.ok) {
-      throw new Error('WordPress API error');
-    }
+    if (!response.ok) throw new Error('Cannot fetch WordPress API');
 
     const data = await response.json();
 
-    // TRẢ VỀ NGUYÊN BẢN DỮ LIỆU (Giữ nguyên cấu trúc JSON gốc)
-    // Điều này đảm bảo Frontend không bị lỗi render
+    // Trả về dữ liệu gốc để file index.html tự xử lý
     return res.status(200).json(data);
-
   } catch (error) {
-    // Nếu có lỗi, trả về mảng rỗng để frontend không bị crash
+    // Trả về mảng rỗng nếu có lỗi để Frontend không bị treo
     return res.status(200).json([]);
   }
 }
