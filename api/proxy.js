@@ -1,14 +1,13 @@
 // File: api/proxy.js
 export default async function handler(req, res) {
-  // ── CORS ──────────────────────────────────────────────────
+  // ── CORS SETUP ─────────────────────────────────────────────
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // ── PROXY ẢNH: GET /api/proxy?img=<url> ──────────────────
+  // ── PROXY ẢNH (GET): Giữ nguyên cơ chế bypass ảnh cũ của bạn ──
   if (req.method === 'GET' && req.query.img) {
     const url = decodeURIComponent(req.query.img);
-
     const allowed = ['dropbox.com', 'nks.vn', 'data.nks.vn', 'online.nks.vn'];
     const ok = allowed.some(d => url.includes(d));
     if (!ok) return res.status(403).json({ error: 'Domain không được phép' });
@@ -20,66 +19,52 @@ export default async function handler(req, res) {
           'Referer': 'https://www.dropbox.com/'
         }
       });
-
       if (!imgRes.ok) {
-        // Trả placeholder nếu ảnh lỗi
         return res.redirect(302, 'https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS');
       }
-
       const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
-      const buffer = await imgRes.arrayBuffer();
-
       res.setHeader('Content-Type', contentType);
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // cache 1 ngày
-      return res.status(200).send(Buffer.from(buffer));
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      const arrayBuffer = await imgRes.arrayBuffer();
+      return res.send(Buffer.from(arrayBuffer));
     } catch (err) {
       return res.redirect(302, 'https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS');
     }
   }
 
-  // ── PROXY DATA: POST /api/proxy ───────────────────────────
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+  // ── LẤY DỮ LIỆU (POST): Đọc kho dữ liệu sạch từ cổng REST API WordPress của bạn ──
+  if (req.method === 'POST') {
+    try {
+      // CHÚ Ý: Bạn hãy thay "https://web-cua-ban.com" bằng tên miền WordPress của bạn
+      const targetUrl = 'https://web-cua-ban.com/wp-json/nks/v1/properties';
 
-  try {
-    const targetUrl = 'https://online.nks.vn/api/nks/rsitems';
-    const response = await fetch(targetUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body || {})
-    });
+      const response = await fetch(targetUrl, {
+        method: 'GET', // Chuyển thành GET để gọi cổng REST API trên WordPress
+        headers: { 'Content-Type': 'application/json' }
+      });
 
-    if (!response.ok) {
-      throw new Error(`API NKS trả về lỗi: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`WordPress API trả về mã lỗi: ${response.status}`);
+      }
+
+      const items = await response.json();
+
+      // Đồng bộ hóa cấu trúc ảnh đi qua hệ thống proxy để chống lỗi hiển thị hình ảnh
+      const mappedItems = items.map(item => {
+        const rawImg = item.featureimg || null;
+        return {
+          ...item,
+          featuring: rawImg,
+          imgProxy: rawImg ? `/api/proxy?img=${encodeURIComponent(rawImg)}` : null
+        };
+      });
+
+      return res.status(200).json(mappedItems);
+
+    } catch (error) {
+      return res.status(500).json({ error: 'Không thể kết nối lấy dữ liệu từ WordPress: ' + error.message });
     }
-
-    const data = await response.json();
-
-    // Chuẩn hóa cấu trúc
-    let items = [];
-    if (Array.isArray(data))              items = data;
-    else if (Array.isArray(data.data))    items = data.data;
-    else if (Array.isArray(data.items))   items = data.items;
-    else if (Array.isArray(data.results)) items = data.results;
-    else if (Array.isArray(data.List))    items = data.List;
-
-    // Map featureimg → featuring + tạo imgUrl proxy qua chính server này
-    items = items.map(item => {
-      const rawImg = item.featureimg || item.featuring || item.image || null;
-      return {
-        ...item,
-        featuring: rawImg,
-        // imgProxy: URL ảnh đi qua proxy của chính mình (tránh CORS/tracking block)
-        imgProxy: rawImg
-          ? `/api/proxy?img=${encodeURIComponent(rawImg)}`
-          : null
-      };
-    });
-
-    return res.status(200).json({ data: items });
-  } catch (error) {
-    console.error('Lỗi Proxy:', error);
-    return res.status(500).json({ error: error.message });
   }
+
+  return res.status(405).json({ error: 'Phương thức không được hệ thống hỗ trợ' });
 }
