@@ -33,7 +33,7 @@ export default async function handler(req, res) {
   }
 
   // ── LẤY DỮ LIỆU (POST): Gọi sang REST API WordPress ────────────────
-  if (req.method === 'POST') {
+  if (req.method === 'GET') {
     try {
       const targetUrl = 'https://nksbds.page.gd/wp-json/nks/v1/properties';
 
