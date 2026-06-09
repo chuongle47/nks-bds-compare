@@ -22,652 +22,665 @@
             --bg:        #f5f8fb;
             --white:     #ffffff;
             --shadow:    0 2px 12px rgba(0,119,187,.08);
-            --shadow-lg: 0 12px 48px rgba(0,0,0,.10);
-            --r:         12px;
+            --shadow-lg: 0 10px 30px rgba(0,119,187,.12);
+            --radius:    12px;
+            --font-serif: 'Cormorant Garamond', serif;
+            --font-sans:  'DM Sans', sans-serif;
         }
-
-        html { scroll-behavior: smooth; }
 
         body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--bg);
+            font-family: var(--font-sans);
+            background-color: var(--bg);
             color: var(--text);
-            min-height: 100vh;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* ── HEADER ── */
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
         header {
-            position: sticky; top: 0; z-index: 100;
-            background: rgba(255,255,255,.92);
-            backdrop-filter: blur(16px);
+            background: var(--white);
             border-bottom: 1px solid var(--border);
+            padding: 24px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 4px rgba(0,0,0,.02);
         }
 
-        .header-inner {
-            max-width: 1360px; margin: auto;
-            padding: 0 clamp(16px,4vw,48px);
-            height: 62px;
-            display: flex; align-items: center; gap: 16px;
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-        .logo-mark {
-            width: 36px; height: 36px; border-radius: 8px;
-            background: var(--blue);
-            display: flex; align-items: center; justify-content: center;
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -1px;
-        }
-        .logo-name { font-size: 15px; font-weight: 600; color: var(--text); }
-        .logo-sub  { font-size: 11px; color: var(--muted); font-weight: 400; }
-
-        .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-
-        .status-pill {
-            display: flex; align-items: center; gap: 7px;
-            padding: 5px 12px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 999px;
-            font-size: 12px; color: var(--muted); font-weight: 500;
-        }
-        .status-dot {
-            width: 7px; height: 7px; border-radius: 50%;
-            background: #22c55e;
-            box-shadow: 0 0 0 3px rgba(34,197,94,.2);
-            flex-shrink: 0;
-        }
-        .status-dot.loading { background: var(--gold); box-shadow: 0 0 0 3px rgba(201,153,58,.2); animation: pulse .9s infinite; }
-        .status-dot.error   { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.2); animation: none; }
-        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
-
-        .btn {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 8px 18px; border-radius: 8px;
-            font-family: inherit; font-size: 13px; font-weight: 600;
-            cursor: pointer; border: none; transition: all .18s;
-            text-decoration: none; white-space: nowrap;
-        }
-        .btn-primary { background: var(--blue); color: #fff; }
-        .btn-primary:hover { background: var(--blue-dk); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,119,187,.3); }
-        .btn-ghost { background: var(--white); color: var(--text-2); border: 1px solid var(--border); }
-        .btn-ghost:hover { background: var(--bg); border-color: var(--blue); color: var(--blue); }
-        .btn-compare { background: var(--blue); color: #fff; }
-        .btn-compare:hover { background: var(--blue-dk); }
-
-        .compare-badge {
-            background: var(--gold); color: #fff;
-            border-radius: 999px; padding: 1px 7px;
-            font-size: 11px; font-weight: 700;
+        .logo-area h1 {
+            font-family: var(--font-serif);
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--blue);
+            letter-spacing: -0.5px;
         }
 
-        /* ── MAIN ── */
-        main {
-            max-width: 1360px; margin: auto;
-            padding: clamp(20px,4vw,48px) clamp(16px,4vw,48px);
+        .logo-area p {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: -2px;
         }
 
-        /* ── TOOLBAR ── */
-        .toolbar {
-            display: flex; align-items: center; gap: 10px;
-            flex-wrap: wrap; margin-bottom: 28px;
-        }
-
-        .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 360px; }
-        .search-icon {
-            position: absolute; left: 12px; top: 50%;
-            transform: translateY(-50%);
-            color: var(--muted); pointer-events: none;
-            width: 15px; height: 15px;
-        }
-        .search-input {
-            width: 100%; padding: 9px 12px 9px 36px;
-            border: 1.5px solid var(--border); border-radius: 8px;
-            font-size: 13px; font-family: inherit; color: var(--text);
-            background: var(--white); outline: none; transition: all .18s;
-        }
-        .search-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,119,187,.10); }
-
-        .filter-select {
-            padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px;
-            font-size: 13px; font-family: inherit; color: var(--text-2);
-            background: var(--white); cursor: pointer; outline: none; transition: all .18s;
-            min-width: 140px;
-        }
-        .filter-select:focus { border-color: var(--blue); }
-
-        .result-count { margin-left: auto; font-size: 13px; color: var(--muted); }
-        .result-count strong { color: var(--blue); font-weight: 700; }
-
-        /* ── COMPARE PANEL ── */
-        .compare-panel {
-            background: var(--white);
-            border: 1.5px solid var(--blue-mid);
-            border-radius: var(--r);
-            overflow: hidden;
-            margin-bottom: 28px;
-            box-shadow: var(--shadow);
-            display: none;
-        }
-        .compare-panel.visible { display: block; animation: slideDown .3s ease; }
-        @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
-
-        .compare-panel-head {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 16px 24px;
-            background: linear-gradient(135deg, var(--blue-lt), var(--blue-mid));
-            border-bottom: 1.5px solid var(--blue-mid);
-        }
-        .compare-panel-title {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 19px; font-weight: 700; color: var(--blue-dk);
-        }
-        .btn-close-compare {
-            background: none; border: 1px solid var(--blue-mid);
-            font-size: 12px; font-weight: 600; color: var(--muted);
-            cursor: pointer; padding: 5px 12px; border-radius: 6px;
-            font-family: inherit; transition: all .18s;
-        }
-        .btn-close-compare:hover { background: var(--white); color: var(--text); }
-
-        .compare-scroll { overflow-x: auto; }
-
-        .compare-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
-        .compare-table thead th {
-            padding: 13px 20px; text-align: left;
-            border-bottom: 2px solid var(--border);
-            background: var(--bg); color: var(--muted);
-            font-weight: 600; white-space: nowrap;
-        }
-        .compare-table thead th:first-child {
-            background: var(--blue-lt); color: var(--blue-dk);
-            min-width: 110px;
-        }
-        .compare-table tbody td {
-            padding: 11px 20px; border-bottom: 1px solid var(--border);
-            color: var(--text-2); vertical-align: top;
-        }
-        .compare-table tbody tr:last-child td { border-bottom: none; }
-        .compare-table tbody tr:hover td { background: var(--bg); }
-        .compare-table .row-label {
-            font-weight: 700; color: var(--muted);
-            background: var(--blue-lt) !important;
-            border-right: 1.5px solid var(--blue-mid);
-            font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
-        }
-        .compare-prop-name { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.4; }
-        .compare-table thead small { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
-
-        /* ── GRID ── */
-        .properties-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(min(235px,100%), 1fr));
-            gap: 22px;
-        }
-
-        /* ── CARD ── */
-        .card {
-            background: var(--white);
-            border: 1.5px solid var(--border);
-            border-radius: var(--r);
-            overflow: hidden;
-            transition: transform .22s, box-shadow .22s, border-color .22s;
-            animation: cardUp .4s ease both;
-            display: flex; flex-direction: column;
-        }
-        .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--blue-mid); }
-        .card.selected { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,119,187,.12); }
-
-        @keyframes cardUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .card-img-wrap {
-            position: relative; width: 100%; height: 170px;
-            overflow: hidden; background: var(--blue-lt);
-            flex-shrink: 0;
-        }
-        .card-img-wrap::after {
-            content: '';
-            position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,.22) 0%, transparent 55%);
-        }
-        .card-img { width: 100%; height: 100%; object-fit: cover; transition: transform .45s; display: block; }
-        .card:hover .card-img { transform: scale(1.06); }
-
-        .card-selected-badge {
-            position: absolute; top: 10px; right: 10px; z-index: 2;
-            background: var(--blue); color: #fff;
-            font-size: 11px; font-weight: 700;
-            padding: 3px 10px; border-radius: 999px;
-            box-shadow: 0 2px 8px rgba(0,119,187,.4);
-        }
-        .card-type-badge {
-            position: absolute; bottom: 10px; left: 10px; z-index: 2;
-            background: rgba(255,255,255,.90); color: var(--blue-dk);
-            font-size: 11px; font-weight: 700;
-            padding: 3px 9px; border-radius: 6px;
-            backdrop-filter: blur(4px);
-        }
-
-        .card-body { padding: 15px 16px 16px; display: flex; flex-direction: column; flex: 1; }
-
-        .card-title {
-            font-size: 14px; font-weight: 600;
-            color: var(--text); line-height: 1.45;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-            overflow: hidden; min-height: 41px; margin-bottom: 7px;
-        }
-
-        .card-price {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 19px; font-weight: 700;
-            color: var(--blue); margin-bottom: 10px;
-        }
-
-        .card-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 13px; flex: 1; }
-
-        .tag {
-            font-size: 11px; font-weight: 500;
-            background: var(--blue-lt); color: var(--blue-dk);
-            padding: 3px 9px; border-radius: 999px;
+        .stats-badge {
+            background: var(--blue-lt);
+            color: var(--blue);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 500;
             border: 1px solid var(--blue-mid);
         }
 
-        .btn-select {
-            width: 100%; padding: 9px;
-            border: 1.5px solid var(--border); border-radius: 8px;
-            background: var(--bg); color: var(--muted);
-            font-size: 13px; font-weight: 600;
-            cursor: pointer; transition: all .18s; font-family: inherit;
-        }
-        .btn-select:hover { background: var(--blue-lt); color: var(--blue-dk); border-color: var(--blue); }
-        .btn-select.active { background: var(--blue); color: #fff; border-color: var(--blue); }
-
-        /* ── SKELETON ── */
-        .skeleton { animation: shimmer 1.3s infinite; }
-        @keyframes shimmer { 0%,100%{opacity:.4} 50%{opacity:.7} }
-        .sk-img  { width:100%; height:170px; background:var(--border); }
-        .sk-line { height:12px; background:var(--border); border-radius:4px; margin-bottom:8px; }
-        .sk-line.w60 { width:60%; }
-        .sk-line.w80 { width:80%; }
-        .sk-btn  { height:34px; background:var(--border); border-radius:8px; margin-top:12px; }
-
-        /* ── EMPTY ── */
-        .state-empty {
-            grid-column: 1/-1; text-align: center;
-            padding: 60px 20px; color: var(--muted);
-        }
-        .state-empty .icon { font-size: 40px; margin-bottom: 14px; }
-
-        /* ── FLOAT BAR ── */
-        .float-bar {
-            position: fixed; bottom: 24px; left: 50%;
-            transform: translateX(-50%) translateY(100px);
+        .search-section {
             background: var(--white);
-            border: 2px solid var(--blue);
-            border-radius: 999px;
-            padding: 11px 24px;
-            display: flex; align-items: center; gap: 14px;
-            box-shadow: 0 8px 40px rgba(0,119,187,.20);
-            transition: transform .32s cubic-bezier(.34,1.56,.64,1);
-            z-index: 9999; white-space: nowrap;
+            border-bottom: 1px solid var(--border);
+            padding: 32px 0;
         }
-        .float-bar.visible { transform: translateX(-50%) translateY(0); }
 
-        .float-text { font-size: 13px; color: var(--muted); }
-        .float-text strong { color: var(--blue); font-weight: 700; font-size: 15px; }
-
-        .float-compare-btn {
-            background: var(--blue); color: #fff;
-            border: none; padding: 9px 20px; border-radius: 999px;
-            font-size: 13px; font-weight: 700; cursor: pointer;
-            font-family: inherit; transition: background .18s;
-            box-shadow: 0 3px 12px rgba(0,119,187,.3);
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 2fr repeat(3, 1fr);
+            gap: 16px;
+            align-items: end;
         }
-        .float-compare-btn:hover { background: var(--blue-dk); }
 
-        .float-clear-btn {
-            background: none; border: none; color: var(--muted);
-            cursor: pointer; font-size: 13px; font-family: inherit;
-            padding: 4px 8px; border-radius: 6px; transition: all .18s;
+        @media (max-width: 992px) {
+            .filter-grid { grid-template-columns: 1fr; }
         }
-        .float-clear-btn:hover { color: #ef4444; background: #fef2f2; }
 
-        /* ── TOAST ── */
-        #nks-toast {
-            position: fixed; bottom: 88px; left: 50%;
-            transform: translateX(-50%);
-            background: var(--text); color: #fff;
-            padding: 10px 20px; border-radius: 999px;
-            font-size: 13px; z-index: 9999;
-            opacity: 0; transition: opacity .25s; pointer-events: none;
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            height: 48px;
+            padding: 0 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text);
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--blue);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(0,119,187,0.1);
+        }
+
+        .main-content {
+            padding: 40px 0 80px 0;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: transform .25s, box-shadow .25s;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-img-wrap {
+            position: relative;
+            width: 100%;
+            padding-top: 65%;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .card-img-wrap img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .5s;
+        }
+
+        .card:hover .card-img-wrap img {
+            transform: scale(1.04);
+        }
+
+        .badge-type {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: rgba(13, 27, 42, 0.85);
+            backdrop-filter: blur(4px);
+            color: var(--white);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .btn-compare-trigger {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--white);
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted);
+            transition: all 0.2s;
+            font-size: 18px;
+        }
+
+        .btn-compare-trigger:hover {
+            color: var(--blue);
+            transform: scale(1.1);
+        }
+
+        .btn-compare-trigger.active {
+            background: var(--blue);
+            color: var(--white);
+        }
+
+        .card-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .card-id {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 12px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 44px;
+        }
+
+        .card-price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .card-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--blue);
+        }
+
+        .card-area {
+            font-size: 14px;
+            color: var(--text-2);
+            font-weight: 500;
+        }
+
+        .card-specs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px 16px;
+            font-size: 13px;
+            color: var(--text-2);
+            margin-bottom: auto;
+        }
+
+        .spec-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .spec-item span { color: var(--muted); }
+
+        .card-footer {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .phone-link {
+            color: var(--gold);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .address-text {
+            color: var(--muted);
+            max-width: 60%;
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        #nks-toast.show { opacity: 1; }
 
-        /* ── RESPONSIVE ── */
-        @media (max-width: 600px) {
-            .toolbar { gap: 8px; }
-            .search-wrap { max-width: 100%; }
-            .filter-select { min-width: 110px; }
-            .float-bar { border-radius: 16px; padding: 12px 16px; gap: 10px; flex-wrap: wrap; justify-content: center; width: calc(100% - 24px); bottom: 12px; }
+        /* COMPARE PANEL */
+        .compare-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.12);
+            border-top: 2px solid var(--blue);
+            z-index: 1000;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
         }
+
+        .compare-panel.visible { transform: translateY(0); }
+
+        .compare-header {
+            padding: 16px 24px;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .compare-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .compare-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--muted);
+            cursor: pointer;
+        }
+
+        .compare-table-wrap {
+            overflow-x: auto;
+            padding: 24px;
+            flex-grow: 1;
+        }
+
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            text-align: left;
+            min-width: 600px;
+        }
+
+        .compare-table th, .compare-table td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .compare-table th {
+            background: var(--bg);
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .compare-table td.row-label, .compare-table th.row-label {
+            background: var(--blue-lt);
+            color: var(--blue-dk);
+            font-weight: 600;
+            width: 180px;
+            position: sticky;
+            left: 0;
+            z-index: 2;
+        }
+
+        .compare-prop-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        /* LOADING & ERROR */
+        .loading-state, .error-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--blue-lt);
+            border-top-color: var(--blue);
+            border-radius: 50%;
+            margin: 0 auto 16px auto;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(300deg); } }
     </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<header>
-    <div class="header-inner">
-        <a class="logo" href="#">
-            <div class="logo-mark">N</div>
-            <div>
-                <div class="logo-name">NKS Property</div>
-                <div class="logo-sub">Hệ thống Đối Chiếu Bất Động Sản</div>
+    <header>
+        <div class="container">
+            <div class="logo-area">
+                <h1>NKS</h1>
+                <p>Hệ thống So Sánh Bất Động Sản</p>
             </div>
-        </a>
-        <div class="header-right">
-            <div class="status-pill">
-                <div class="status-dot loading" id="statusDot"></div>
-                <span id="statusText">Đang tải...</span>
-            </div>
-            <button class="btn btn-ghost" onclick="fetchProperties()" id="syncBtn">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                Đồng bộ
-            </button>
-            <button class="btn btn-compare" id="compareBtn" style="display:none" onclick="scrollToCompare()">
-                📊 So sánh <span class="compare-badge" id="compareCount">0</span>
-            </button>
+            <div class="stats-badge" id="statsBadge">Đang kết nối kho dữ liệu...</div>
         </div>
-    </div>
-</header>
+    </header>
 
-<main>
-    <!-- COMPARE PANEL -->
-    <div class="compare-panel" id="comparePanel">
-        <div class="compare-panel-head">
-            <div class="compare-panel-title">📊 Bảng Đối Chiếu Bất Động Sản</div>
-            <button class="btn-close-compare" onclick="closeCompare()">✕ Đóng</button>
+    <section class="search-section">
+        <div class="container">
+            <div class="filter-grid">
+                <div class="form-group">
+                    <label>Tìm kiếm tin đăng</label>
+                    <input type="text" id="searchInp" placeholder="Nhập từ khóa cần tìm (Địa chỉ, tiêu đề...)" oninput="filterData()">
+                </div>
+                <div class="form-group">
+                    <label>Loại hình BĐS</label>
+                    <select id="typeFilter" onchange="filterData()">
+                        <option value="">Tất cả loại hình</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Sắp xếp diện tích</label>
+                    <select id="areaSort" onchange="filterData()">
+                        <option value="">Mặc định</option>
+                        <option value="asc">Diện tích: Nhỏ đến Lớn</option>
+                        <option value="desc">Diện tích: Lớn đến Nhỏ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Sắp xếp giá</label>
+                    <select id="priceSort" onchange="filterData()">
+                        <option value="">Mặc định</option>
+                        <option value="asc">Giá: Thấp đến Cao</option>
+                        <option value="desc">Giá: Cao đến Thấp</option>
+                    </select>
+                </div>
+            </div>
         </div>
-        <div class="compare-scroll">
+    </section>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="grid-layout" id="propertiesGrid">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p style="color: var(--muted)">Đang tải cấu trúc danh sách dữ liệu từ WordPress...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="compare-panel" id="comparePanel">
+        <div class="compare-header">
+            <h3>Bảng Đối Chiếu Thông Tin Chuyên Sâu</h3>
+            <button class="compare-close" onclick="closeCompare()">✕</button>
+        </div>
+        <div class="compare-table-wrap">
             <table class="compare-table">
-                <thead><tr id="compareHead"></tr></thead>
+                <thead id="compareHead"></thead>
                 <tbody id="compareBody"></tbody>
             </table>
         </div>
     </div>
 
-    <!-- TOOLBAR -->
-    <div class="toolbar">
-        <div class="search-wrap">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input type="text" id="searchInput" class="search-input"
-                   placeholder="Tìm kiếm BĐS, địa chỉ..." oninput="applyFilter()">
-        </div>
-        <select id="filterType" class="filter-select" onchange="applyFilter()">
-            <option value="">Tất cả loại</option>
-        </select>
-        <select id="sortBy" class="filter-select" onchange="applyFilter()">
-            <option value="">Sắp xếp</option>
-            <option value="price-asc">Giá tăng dần</option>
-            <option value="price-desc">Giá giảm dần</option>
-            <option value="area-asc">Diện tích tăng</option>
-            <option value="area-desc">Diện tích giảm</option>
-        </select>
-        <span class="result-count" id="resultCount"></span>
-    </div>
+    <script>
+        let allData = [];
+        let filteredData = [];
+        let selected = [];
 
-    <!-- GRID -->
-    <div class="properties-grid" id="propertiesGrid">
-        <!-- skeleton -->
-        ${Array(8).fill(0).map(() => `
-        <div class="card skeleton">
-            <div class="sk-img"></div>
-            <div style="padding:15px 16px">
-                <div class="sk-line w80"></div>
-                <div class="sk-line w60"></div>
-                <div class="sk-btn"></div>
-            </div>
-        </div>`).join('')}
-    </div>
-</main>
+        // KHỞI CHẠY TẢI DỮ LIỆU QUA API PROXY CỦA VERCEL TRỎ VỀ WORDPRESS
+        async function loadData() {
+            try {
+                // Gọi API proxy với phương thức POST như cấu hình chuẩn cũ của bạn
+                const response = await fetch('/api/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
 
-<!-- FLOAT BAR -->
-<div class="float-bar" id="floatBar">
-    <span class="float-text">Đã chọn <strong id="floatCount">0</strong>/4 BĐS</span>
-    <button class="float-compare-btn" onclick="scrollToCompare()">📊 So sánh ngay</button>
-    <button class="float-clear-btn" onclick="clearSelection()">✕ Xóa</button>
-</div>
+                if (!response.ok) {
+                    throw new Error(`Mã phản hồi cổng kết nối bị từ chối: ${response.status}`);
+                }
 
-<div id="nks-toast"></div>
+                const data = await response.json();
 
-<script>
-    let allData     = [];
-    let filtered    = [];
-    let selected    = [];
-    const PROXY     = '/api/proxy';
-    
-    const NO_IMG    = 'https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS';
+                // CHUẨN HÓA DỮ LIỆU ĐẦU VÀO ĐỂ TRÁNH LỖI KHI CÓ TRƯỜNG DỮ LIỆU TRỐNG TRÊN WORDPRESS
+                allData = data.map(item => {
+                    // Ưu tiên chạy qua hệ thống xử lý ảnh proxy của bạn để tránh lỗi chặn CORS
+                    const finalImg = item.imgProxy || item.featuring || item.featureimg || 'https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS';
+                    
+                    return {
+                        id: String(item.id || ''),
+                        title: item.title || 'Tin đăng Bất Động Sản',
+                        formatedPrice: item.formatedPrice || 'Liên hệ',
+                        price: Number(item.price) || 0,
+                        total_area: Number(item.total_area) || 0,
+                        rstype: item.rstype || 'Chưa phân loại',
+                        bed: Number(item.bed) || 0,
+                        bath: Number(item.bath) || 0,
+                        direction: item.direction || '—',
+                        address: item.address || '—',
+                        phone: item.phone || '—',
+                        featuring: finalImg
+                    };
+                });
 
-    // ── Helpers ──────────────────────────────────────────────
+                filteredData = [...allData];
+                
+                document.getElementById('statsBadge').textContent = `Tổng kho dữ liệu WordPress: ${allData.length} tin`;
+                
+                initTypeFilter();
+                renderCards(filteredData);
 
-    function imgUrl(url) {
-        if (!url) return NO_IMG;
-        return '/api/proxy?img=' + encodeURIComponent(url);
-    }
-
-    function setStatus(state, msg) {
-        const dot  = document.getElementById('statusDot');
-        const text = document.getElementById('statusText');
-        dot.className  = 'status-dot ' + (state === 'loading' ? 'loading' : state === 'error' ? 'error' : '');
-        text.textContent = msg;
-    }
-
-    function showToast(msg) {
-        const t = document.getElementById('nks-toast');
-        t.textContent = msg;
-        t.classList.add('show');
-        clearTimeout(t._t);
-        t._t = setTimeout(() => t.classList.remove('show'), 2500);
-    }
-
-    function updateCompareUI() {
-        const n   = selected.length;
-        const btn = document.getElementById('compareBtn');
-        document.getElementById('compareCount').textContent = n;
-        document.getElementById('floatCount').textContent   = n;
-        btn.style.display = n > 0 ? 'inline-flex' : 'none';
-        document.getElementById('floatBar').classList.toggle('visible', n > 0);
-    }
-
-    // ── Fetch ────────────────────────────────────────────────
-
-    async function fetchProperties() {
-        setStatus('loading', 'Đang đồng bộ...');
-        document.getElementById('syncBtn').disabled = true;
-        renderSkeleton();
-
-        try {
-            const res  = await fetch(PROXY, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const json = await res.json();
-
-            // Chuẩn hóa cấu trúc
-            let items = [];
-            if (Array.isArray(json) && json[0])         items = json;
-            else if (Array.isArray(json.data))           items = json.data;
-            else if (Array.isArray(json.items))          items = json.items;
-            else if (Array.isArray(json.List))           items = json.List;
-
-            // Map field featureimg → featuring
-            allData = items.map(i => ({
-                ...i,
-                featuring: i.featureimg || i.featuring || i.image || null
-            }));
-
-            // Build loại filter
-            const types = [...new Set(allData.map(i => i.rstype).filter(Boolean))].sort();
-            const sel   = document.getElementById('filterType');
-            sel.innerHTML = '<option value="">Tất cả loại</option>'
-                + types.map(t => `<option value="${t}">${t}</option>`).join('');
-
-            setStatus('ok', `${allData.length} bất động sản`);
-            applyFilter();
-        } catch (err) {
-            setStatus('error', 'Lỗi: ' + err.message);
-            document.getElementById('propertiesGrid').innerHTML =
-                `<div class="state-empty"><div class="icon">⚠️</div><p style="color:#ef4444">${err.message}</p><p style="margin-top:8px;font-size:13px">Kiểm tra endpoint <code>/api/proxy</code></p></div>`;
-        } finally {
-            document.getElementById('syncBtn').disabled = false;
-        }
-    }
-
-    // ── Filter & Sort ────────────────────────────────────────
-
-    function applyFilter() {
-        const q    = document.getElementById('searchInput').value.toLowerCase().trim();
-        const type = document.getElementById('filterType').value;
-        const sort = document.getElementById('sortBy').value;
-
-        filtered = allData.filter(item => {
-            const matchQ = !q || (item.title||'').toLowerCase().includes(q) || (item.address||'').toLowerCase().includes(q);
-            const matchT = !type || item.rstype === type;
-            return matchQ && matchT;
-        });
-
-        if (sort === 'price-asc')  filtered.sort((a,b) => (a.price||0) - (b.price||0));
-        if (sort === 'price-desc') filtered.sort((a,b) => (b.price||0) - (a.price||0));
-        if (sort === 'area-asc')   filtered.sort((a,b) => (a.total_area||0) - (b.total_area||0));
-        if (sort === 'area-desc')  filtered.sort((a,b) => (b.total_area||0) - (a.total_area||0));
-
-        document.getElementById('resultCount').innerHTML =
-            `Hiển thị <strong>${filtered.length}</strong> / ${allData.length} tin`;
-
-        renderCards();
-    }
-
-    // ── Render ───────────────────────────────────────────────
-
-    function renderSkeleton() {
-        document.getElementById('propertiesGrid').innerHTML = Array(8).fill(0).map(() => `
-            <div class="card skeleton">
-                <div class="sk-img"></div>
-                <div style="padding:15px 16px">
-                    <div class="sk-line w80"></div>
-                    <div class="sk-line w60"></div>
-                    <div class="sk-btn"></div>
-                </div>
-            </div>`).join('');
-    }
-
-    function renderCards() {
-        const grid = document.getElementById('propertiesGrid');
-
-        if (!filtered.length) {
-            grid.innerHTML = `<div class="state-empty"><div class="icon">🔍</div><p>Không tìm thấy kết quả phù hợp.</p></div>`;
-            return;
-        }
-
-        grid.innerHTML = filtered.map((item, i) => {
-            const on  = selected.includes(String(item.id));
-            const img = item.imgProxy || imgUrl(item.featuring);
-            const price = item.formatedPrice || item.price_label || 'Liên hệ';
-            const area  = item.total_area ? item.total_area + ' m²' : null;
-
-            return `<div class="card${on?' selected':''}" style="animation-delay:${Math.min(i,15)*35}ms">
-                <div class="card-img-wrap">
-                    <img class="card-img" src="${img}" alt="${item.title||''}" loading="lazy"
-                         onerror="this.onerror=null;this.src='${NO_IMG}'">
-                    ${on ? '<span class="card-selected-badge">✓ Đã chọn</span>' : ''}
-                    ${item.rstype ? `<span class="card-type-badge">${item.rstype}</span>` : ''}
-                </div>
-                <div class="card-body">
-                    <div class="card-title">${item.title || 'Không có tiêu đề'}</div>
-                    <div class="card-price">${price}</div>
-                    <div class="card-meta">
-                        ${area ? `<span class="tag">📐 ${area}</span>` : ''}
-                        ${item.bed  ? `<span class="tag">🛏 ${item.bed} PN</span>` : ''}
-                        ${item.bath ? `<span class="tag">🚿 ${item.bath} PT</span>` : ''}
-                        ${item.direction ? `<span class="tag">🧭 ${item.direction}</span>` : ''}
+            } catch (error) {
+                console.error("Lỗi đồng bộ dữ liệu Vercel:", error);
+                document.getElementById('propertiesGrid').innerHTML = `
+                    <div class="error-state">
+                        <p style="color: #ef4444; font-weight: 600; font-size: 16px; margin-bottom: 8px;">✕ Không thể nạp kho dữ liệu</p>
+                        <p style="color: var(--muted); font-size: 14px;">Chi tiết lỗi: ${error.message}</p>
+                        <p style="color: var(--muted); font-size: 13px; margin-top: 10px;">Vui lòng đảm bảo bạn đã lưu cấu hình và đồng bộ tin thành công bên WordPress Admin.</p>
                     </div>
-                    <button class="btn-select${on?' active':''}" onclick="toggleSelect('${item.id}')">
-                        ${on ? '✓ Bỏ chọn' : '+ So sánh'}
-                    </button>
-                </div>
-            </div>`;
-        }).join('');
-    }
-
-    // ── Select ───────────────────────────────────────────────
-
-    function toggleSelect(id) {
-        id = String(id);
-        const idx = selected.indexOf(id);
-        if (idx > -1) {
-            selected.splice(idx, 1);
-        } else {
-            if (selected.length >= 4) { showToast('Chỉ chọn tối đa 4 BĐS để so sánh!'); return; }
-            selected.push(id);
+                `;
+                document.getElementById('statsBadge').textContent = `Lỗi kết nối API`;
+            }
         }
-        updateCompareUI();
-        renderCards();
-    }
 
-    function clearSelection() {
-        selected = [];
-        closeCompare();
-        updateCompareUI();
-        renderCards();
-    }
+        function initTypeFilter() {
+            const types = [...new Set(allData.map(item => item.rstype))].filter(Boolean);
+            const select = document.getElementById('typeFilter');
+            types.sort().forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t;
+                opt.textContent = t;
+                select.appendChild(opt);
+            });
+        }
 
-    // ── Compare ──────────────────────────────────────────────
+        function renderCards(items) {
+            const grid = document.getElementById('propertiesGrid');
+            if(items.length === 0) {
+                grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--muted)">Không tìm thấy bất động sản nào khớp với bộ lọc dữ liệu của bạn.</div>`;
+                return;
+            }
 
-    function scrollToCompare() {
-        buildCompareTable();
-        const panel = document.getElementById('comparePanel');
-        panel.classList.add('visible');
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+            grid.innerHTML = items.map(i => {
+                const isSel = selected.includes(i.id);
+                return `
+                    <div class="card" data-id="${i.id}">
+                        <div class="card-img-wrap">
+                            <img src="${i.featuring}" alt="${i.title}" onerror="this.src='https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS'">
+                            <span class="badge-type">${i.rstype}</span>
+                            <button class="btn-compare-trigger ${isSel ? 'active' : ''}" onclick="toggleCompare('${i.id}', this)" title="Thêm vào bảng so sánh">
+                                ${isSel ? '✓' : '＋'}
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <span class="card-id">Mã tin: #${i.id}</span>
+                            <h2 class="card-title" title="${i.title}">${i.title}</h2>
+                            <div class="card-price-row">
+                                <span class="card-price">${i.formatedPrice}</span>
+                                <span class="card-area">${i.total_area ? i.total_area + ' m²' : '—'}</span>
+                            </div>
+                            <div class="card-specs">
+                                <div class="spec-item"><span>🛏</span> Ph.ngủ: ${i.bed || '—'}</div>
+                                <div class="spec-item"><span>🚿</span> Ph.tắm: ${i.bath || '—'}</div>
+                                <div class="spec-item"><span>🧭</span> Hướng: ${i.direction}</div>
+                            </div>
+                            <div class="card-footer">
+                                <span class="address-text" title="${i.address}">📍 ${i.address}</span>
+                                <a href="tel:${i.phone}" class="phone-link">📞 ${i.phone}</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
 
-    function closeCompare() {
-        document.getElementById('comparePanel').classList.remove('visible');
-    }
+        function filterData() {
+            const sWord = document.getElementById('searchInp').value.toLowerCase().trim();
+            const type = document.getElementById('typeFilter').value;
+            const areaS = document.getElementById('areaSort').value;
+            const priceS = document.getElementById('priceSort').value;
 
-    function buildCompareTable() {
-        const items  = allData.filter(d => selected.includes(String(d.id)));
-        const fields = [
-            { l: 'Giá',        k: 'formatedPrice' },
-            { l: 'Diện tích',  k: 'total_area',   fmt: v => v ? v + ' m²' : '—' },
-            { l: 'Loại BĐS',   k: 'rstype' },
-            { l: 'Phòng ngủ',  k: 'bed' },
-            { l: 'Phòng tắm',  k: 'bath' },
-            { l: 'Hướng',      k: 'direction' },
-            { l: 'Địa chỉ',    k: 'address' },
-            { l: 'Điện thoại', k: 'phone' },
-        ];
+            filteredData = allData.filter(item => {
+                const matchWord = !sWord || item.title.toLowerCase().includes(sWord) || item.address.toLowerCase().includes(sWord) || item.id.includes(sWord);
+                const matchType = !type || item.rstype === type;
+                return matchWord && matchType;
+            });
 
-        document.getElementById('compareHead').innerHTML =
-            '<th class="row-label">Tiêu chí</th>'
-            + items.map(i => `<th><div class="compare-prop-name">${i.title||'—'}</div><small>#${i.id}</small></th>`).join('');
+            if (areaS) {
+                filteredData.sort((a, b) => areaS === 'asc' ? a.total_area - b.total_area : b.total_area - a.total_area);
+            }
+            if (priceS) {
+                filteredData.sort((a, b) => priceS === 'asc' ? a.price - b.price : b.price - a.price);
+            }
 
-        document.getElementById('compareBody').innerHTML =
-            fields.map(f => `<tr>
-                <td class="row-label">${f.l}</td>
-                ${items.map(i => {
-                    const val = i[f.k];
-                    const display = f.fmt ? f.fmt(val) : (val || '—');
-                    return `<td>${display}</td>`;
-                }).join('')}
-            </tr>`).join('');
-    }
+            renderCards(filteredData);
+        }
 
-    // ── Init ─────────────────────────────────────────────────
-    fetchProperties();
-</script>
+        function toggleCompare(id, btn) {
+            id = String(id);
+            if (selected.includes(id)) {
+                selected = selected.filter(x => x !== id);
+                btn.classList.remove('active');
+                btn.textContent = '＋';
+            } else {
+                if (selected.length >= 4) {
+                    alert('Hệ thống chỉ hỗ trợ so sánh tối đa 4 tin đăng cùng lúc để đảm bảo giao diện hiển thị tốt nhất.');
+                    return;
+                }
+                selected.push(id);
+                btn.classList.add('active');
+                btn.textContent = '✓';
+            }
+
+            if (selected.length > 0) {
+                buildCompareTable();
+                document.getElementById('comparePanel').classList.add('visible');
+            } else {
+                closeCompare();
+            }
+        }
+
+        function closeCompare() {
+            document.getElementById('comparePanel').classList.remove('visible');
+        }
+
+        function buildCompareTable() {
+            const items = allData.filter(d => selected.includes(d.id));
+            const fields = [
+                { l: 'Mức giá', k: 'formatedPrice' },
+                { l: 'Diện tích', k: 'total_area', fmt: v => v ? v + ' m²' : '—' },
+                { l: 'Loại hình BĐS', k: 'rstype' },
+                { l: 'Phòng ngủ', k: 'bed' },
+                { l: 'Phòng tắm', k: 'bath' },
+                { l: 'Hướng nhà', k: 'direction' },
+                { l: 'Địa chỉ vị trí', k: 'address' },
+                { l: 'Hotline liên hệ', k: 'phone', fmt: v => v ? `<a href="tel:${v}" style="color:var(--gold); font-weight:600; text-decoration:none;">📞 ${v}</a>` : '—' },
+            ];
+
+            document.getElementById('compareHead').innerHTML =
+                '<th class="row-label">Tiêu chí đối chiếu</th>'
+                + items.map(i => `<th><div class="compare-prop-name">${i.title}</div><small style="color:var(--muted)">#${i.id}</small></th>`).join('');
+
+            document.getElementById('compareBody').innerHTML =
+                fields.map(f => `<tr>
+                    <td class="row-label">${f.l}</td>
+                    ${items.map(i => {
+                        const val = i[f.k];
+                        return `<td>${f.fmt ? f.fmt(val) : (val || '—')}</td>`;
+                    }).join('')}
+                </tr>`).join('');
+                
+            document.getElementById('comparePanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Chạy tải dữ liệu khi vừa bật trang lên
+        window.addEventListener('DOMContentLoaded', loadData);
+    </script>
 </body>
 </html>
