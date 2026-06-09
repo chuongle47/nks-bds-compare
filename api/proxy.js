@@ -1,39 +1,29 @@
 /**
- * File: api/proxy.js
- * Hỗ trợ GET (cho ảnh) và GET/POST (cho dữ liệu WordPress)
+ * API Proxy cho NKS Property
+ * Xử lý: Proxy hình ảnh (GET) và Lấy dữ liệu BĐS từ WordPress (GET/POST)
  */
 
 export default async function handler(req, res) {
-  // ── CORS SETUP ─────────────────────────────────────────────
+  // 1. Cấu hình CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // ── 1. PROXY ẢNH (Chỉ GET) ──────────────────────────────────
+  // 2. PROXY ẢNH (GET /api/proxy?img=...)
   if (req.method === 'GET' && req.query.img) {
     const url = decodeURIComponent(req.query.img);
-    const allowedDomains = ['dropbox.com', 'nks.vn', 'data.nks.vn', 'online.nks.vn'];
+    const allowed = ['dropbox.com', 'nks.vn', 'data.nks.vn', 'online.nks.vn'];
     
-    if (!allowedDomains.some(d => url.includes(d))) {
+    if (!allowed.some(d => url.includes(d))) {
       return res.status(403).json({ error: 'Domain không được phép' });
     }
 
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
-
-      const imgRes = await fetch(url, {
-        signal: controller.signal,
-        headers: { 'User-Agent': 'Mozilla/5.0' }
-      });
-      clearTimeout(timeout);
-
-      if (!imgRes.ok) throw new Error('Image fetch failed');
-
+      const imgRes = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      if (!imgRes.ok) throw new Error();
+      
       const buffer = Buffer.from(await imgRes.arrayBuffer());
       res.setHeader('Content-Type', imgRes.headers.get('content-type') || 'image/jpeg');
       res.setHeader('Cache-Control', 'public, max-age=86400');
@@ -43,40 +33,39 @@ export default async function handler(req, res) {
     }
   }
 
-  // ── 2. LẤY DỮ LIỆU TỪ WORDPRESS (Hỗ trợ GET và POST) ───────
+  // 3. LẤY DỮ LIỆU WORDPRESS (GET hoặc POST)
   if (req.method === 'GET' || req.method === 'POST') {
     try {
       const response = await fetch('https://nksbds.page.gd/wp-json/nks/v1/properties', {
-        method: 'GET', // Luôn dùng GET để gọi WP
-        headers: { 
-          'Accept': 'application/json',
-          'User-Agent': 'Vercel-Proxy-Service'
-        }
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
       });
 
-      if (!response.ok) {
-        throw new Error(`WordPress returned status ${response.status}`);
-      }
+      // Nếu WordPress không trả về 200, bỏ qua và trả về mảng rỗng
+      if (!response.ok) return res.status(200).json([]);
 
       const data = await response.json();
       const items = Array.isArray(data) ? data : [];
 
-      const mappedItems = items.map(item => ({
-        ...item,
-        featuring: item.featureimg || null,
-        imgProxy: (item.featureimg && typeof item.featureimg === 'string' && item.featureimg.trim() !== '') 
-                   ? `/api/proxy?img=${encodeURIComponent(item.featureimg)}` 
-                   : null
-      }));
+      // Xử lý dữ liệu an toàn
+      const mappedItems = items
+        .filter(item => item && typeof item === 'object') // Chỉ lấy đối tượng hợp lệ
+        .map(item => {
+          const rawImg = (item.featureimg && typeof item.featureimg === 'string') ? item.featureimg : null;
+          return {
+            ...item,
+            featuring: rawImg,
+            imgProxy: rawImg ? `/api/proxy?img=${encodeURIComponent(rawImg)}` : null
+          };
+        });
 
       return res.status(200).json(mappedItems);
     } catch (error) {
-      return res.status(500).json({ 
-        error: 'Không thể kết nối tới nguồn dữ liệu', 
-        message: error.message 
-      });
+      // Bắt mọi lỗi xảy ra (kể cả lỗi JSON parse) để tránh HTTP 500
+      return res.status(200).json([]);
     }
   }
 
+  // 4. Các phương thức khác bị chặn
   return res.status(405).json({ error: 'Phương thức không được hỗ trợ' });
 }
