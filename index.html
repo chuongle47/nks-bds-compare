@@ -1,686 +1,189 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NKS — Hệ thống So Sánh Bất Động Sản</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+let allData = [];
+let filteredData = [];
+let selected = [];
 
-        :root {
-            --blue:      #0077bb;
-            --blue-dk:   #005a8e;
-            --blue-lt:   #e8f4fd;
-            --blue-mid:  #cce4f6;
-            --gold:      #c9993a;
-            --text:      #0d1b2a;
-            --text-2:    #2d4157;
-            --muted:     #6b8094;
-            --border:    #dde6ee;
-            --bg:        #f5f8fb;
-            --white:     #ffffff;
-            --shadow:    0 2px 12px rgba(0,119,187,.08);
-            --shadow-lg: 0 10px 30px rgba(0,119,187,.12);
-            --radius:    12px;
-            --font-serif: 'Cormorant Garamond', serif;
-            --font-sans:  'DM Sans', sans-serif;
+async function loadData() {
+    try {
+        const response = await fetch('/api/proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const resData = await response.json();
+
+        if (!response.ok) {
+            // Hiển thị trực tiếp lỗi hệ thống hoặc lỗi PHP/HTML của WordPress lên màn hình
+            throw new Error(resData.error + (resData.debug ? ` | Chi tiết: ${resData.debug}` : ''));
         }
 
-        body {
-            font-family: var(--font-sans);
-            background-color: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-        }
+        allData = resData.map(item => {
+            const finalImg = item.imgProxy || item.featuring || item.featureimg || 'https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS';
+            return {
+                id: String(item.id || ''),
+                title: item.title || 'Tin đăng Bất Động Sản',
+                formatedPrice: item.formatedPrice || 'Liên hệ',
+                price: Number(item.price) || 0,
+                total_area: Number(item.total_area) || 0,
+                rstype: item.rstype || 'Chưa phân loại',
+                bed: Number(item.bed) || 0,
+                bath: Number(item.bath) || 0,
+                direction: item.direction || '—',
+                address: item.address || '—',
+                phone: item.phone || '—',
+                featuring: finalImg
+            };
+        });
 
-        .container {
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
+        filteredData = [...allData];
+        document.getElementById('statsBadge').textContent = `Tổng kho dữ liệu WordPress: ${allData.length} tin`;
+        
+        initTypeFilter();
+        renderCards(filteredData);
 
-        header {
-            background: var(--white);
-            border-bottom: 1px solid var(--border);
-            padding: 24px 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 1px 4px rgba(0,0,0,.02);
-        }
-
-        header .container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo-area h1 {
-            font-family: var(--font-serif);
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--blue);
-            letter-spacing: -0.5px;
-        }
-
-        .logo-area p {
-            font-size: 12px;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-top: -2px;
-        }
-
-        .stats-badge {
-            background: var(--blue-lt);
-            color: var(--blue);
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 500;
-            border: 1px solid var(--blue-mid);
-        }
-
-        .search-section {
-            background: var(--white);
-            border-bottom: 1px solid var(--border);
-            padding: 32px 0;
-        }
-
-        .filter-grid {
-            display: grid;
-            grid-template-columns: 2fr repeat(3, 1fr);
-            gap: 16px;
-            align-items: end;
-        }
-
-        @media (max-width: 992px) {
-            .filter-grid { grid-template-columns: 1fr; }
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .form-group label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-2);
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            height: 48px;
-            padding: 0 16px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            font-family: inherit;
-            font-size: 14px;
-            color: var(--text);
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            border-color: var(--blue);
-            background: var(--white);
-            box-shadow: 0 0 0 3px rgba(0,119,187,0.1);
-        }
-
-        .main-content {
-            padding: 40px 0 80px 0;
-        }
-
-        .grid-layout {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 30px;
-        }
-
-        .card {
-            background: var(--white);
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            transition: transform .25s, box-shadow .25s;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .card-img-wrap {
-            position: relative;
-            width: 100%;
-            padding-top: 65%;
-            background: #e2e8f0;
-            overflow: hidden;
-        }
-
-        .card-img-wrap img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform .5s;
-        }
-
-        .card:hover .card-img-wrap img {
-            transform: scale(1.04);
-        }
-
-        .badge-type {
-            position: absolute;
-            top: 16px;
-            left: 16px;
-            background: rgba(13, 27, 42, 0.85);
-            backdrop-filter: blur(4px);
-            color: var(--white);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .btn-compare-trigger {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--white);
-            border: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--muted);
-            transition: all 0.2s;
-            font-size: 18px;
-        }
-
-        .btn-compare-trigger:hover {
-            color: var(--blue);
-            transform: scale(1.1);
-        }
-
-        .btn-compare-trigger.active {
-            background: var(--blue);
-            color: var(--white);
-        }
-
-        .card-body {
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
-
-        .card-id {
-            font-size: 12px;
-            color: var(--muted);
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-
-        .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: 12px;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            height: 44px;
-        }
-
-        .card-price-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px dashed var(--border);
-        }
-
-        .card-price {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--blue);
-        }
-
-        .card-area {
-            font-size: 14px;
-            color: var(--text-2);
-            font-weight: 500;
-        }
-
-        .card-specs {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px 16px;
-            font-size: 13px;
-            color: var(--text-2);
-            margin-bottom: auto;
-        }
-
-        .spec-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .spec-item span { color: var(--muted); }
-
-        .card-footer {
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-        }
-
-        .phone-link {
-            color: var(--gold);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .address-text {
-            color: var(--muted);
-            max-width: 60%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* COMPARE PANEL */
-        .compare-panel {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--white);
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.12);
-            border-top: 2px solid var(--blue);
-            z-index: 1000;
-            transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .compare-panel.visible { transform: translateY(0); }
-
-        .compare-header {
-            padding: 16px 24px;
-            background: var(--bg);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .compare-header h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .compare-close {
-            background: none;
-            border: none;
-            font-size: 20px;
-            color: var(--muted);
-            cursor: pointer;
-        }
-
-        .compare-table-wrap {
-            overflow-x: auto;
-            padding: 24px;
-            flex-grow: 1;
-        }
-
-        .compare-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-            text-align: left;
-            min-width: 600px;
-        }
-
-        .compare-table th, .compare-table td {
-            padding: 14px 20px;
-            border-bottom: 1px solid var(--border);
-            vertical-align: top;
-        }
-
-        .compare-table th {
-            background: var(--bg);
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .compare-table td.row-label, .compare-table th.row-label {
-            background: var(--blue-lt);
-            color: var(--blue-dk);
-            font-weight: 600;
-            width: 180px;
-            position: sticky;
-            left: 0;
-            z-index: 2;
-        }
-
-        .compare-prop-name {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--text);
-            margin-bottom: 4px;
-        }
-
-        /* LOADING & ERROR */
-        .loading-state, .error-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 80px 20px;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--blue-lt);
-            border-top-color: var(--blue);
-            border-radius: 50%;
-            margin: 0 auto 16px auto;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin { to { transform: rotate(300deg); } }
-    </style>
-</head>
-<body>
-
-    <header>
-        <div class="container">
-            <div class="logo-area">
-                <h1>NKS</h1>
-                <p>Hệ thống So Sánh Bất Động Sản</p>
+    } catch (error) {
+        console.error("Lỗi đồng bộ dữ liệu Vercel:", error);
+        document.getElementById('propertiesGrid').innerHTML = `
+            <div class="error-state" style="grid-column:1/-1; text-align:left; background:#fff1f2; border:1px solid #fecdd3; padding:24px; border-radius:12px; max-width:800px; margin:0 auto;">
+                <p style="color: #e11d48; font-weight: 600; font-size: 16px; margin-bottom: 8px;">✕ Hệ thống chặn kết nối (Dữ liệu không đồng nhất)</p>
+                <p style="color: #4c0519; font-size: 13px; font-family:monospace; background:#fff; padding:12px; border-radius:6px; border:1px solid #ffe4e6; word-break:break-all;">
+                    ${error.message}
+                </p>
+                <p style="color: #633b48; font-size: 13px; margin-top: 12px; line-height:1.5;">
+                    💡 <strong>Cách xử lý:</strong> Lỗi này thông báo rằng đường dẫn <code>https://nksbds.page.gd/wp-json/nks/v1/properties</code> đang trả về trang lỗi trống hoặc lỗi bảo mật Host chứ không trả về chuỗi JSON tin đăng. Hãy chắc chắn rằng bạn đã kích hoạt Plugin <code>nks-bds.php</code> (Bản V5.0) trên website WordPress đó.
+                </p>
             </div>
-            <div class="stats-badge" id="statsBadge">Đang kết nối kho dữ liệu...</div>
-        </div>
-    </header>
+        `;
+        document.getElementById('statsBadge').textContent = `Lỗi phản hồi hệ thống`;
+    }
+}
 
-    <section class="search-section">
-        <div class="container">
-            <div class="filter-grid">
-                <div class="form-group">
-                    <label>Tìm kiếm tin đăng</label>
-                    <input type="text" id="searchInp" placeholder="Nhập từ khóa cần tìm (Địa chỉ, tiêu đề...)" oninput="filterData()">
+function initTypeFilter() {
+    const types = [...new Set(allData.map(item => item.rstype))].filter(Boolean);
+    const select = document.getElementById('typeFilter');
+    select.innerHTML = '<option value="">Tất cả loại hình</option>';
+    types.sort().forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        select.appendChild(opt);
+    });
+}
+
+function renderCards(items) {
+    const grid = document.getElementById('propertiesGrid');
+    if(items.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--muted)">Không tìm thấy bất động sản nào khớp với bộ lọc dữ liệu của bạn.</div>`;
+        return;
+    }
+
+    grid.innerHTML = items.map(i => {
+        const isSel = selected.includes(i.id);
+        return `
+            <div class="card" data-id="${i.id}">
+                <div class="card-img-wrap">
+                    <img src="${i.featuring}" alt="${i.title}" onerror="this.src='https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS'">
+                    <span class="badge-type">${i.rstype}</span>
+                    <button class="btn-compare-trigger ${isSel ? 'active' : ''}" onclick="toggleCompare('${i.id}', this)" title="Thêm vào bảng so sánh">
+                        ${isSel ? '✓' : '＋'}
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label>Loại hình BĐS</label>
-                    <select id="typeFilter" onchange="filterData()">
-                        <option value="">Tất cả loại hình</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Sắp xếp diện tích</label>
-                    <select id="areaSort" onchange="filterData()">
-                        <option value="">Mặc định</option>
-                        <option value="asc">Diện tích: Nhỏ đến Lớn</option>
-                        <option value="desc">Diện tích: Lớn đến Nhỏ</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Sắp xếp giá</label>
-                    <select id="priceSort" onchange="filterData()">
-                        <option value="">Mặc định</option>
-                        <option value="asc">Giá: Thấp đến Cao</option>
-                        <option value="desc">Giá: Cao đến Thấp</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <main class="main-content">
-        <div class="container">
-            <div class="grid-layout" id="propertiesGrid">
-                <div class="loading-state">
-                    <div class="spinner"></div>
-                    <p style="color: var(--muted)">Đang tải cấu trúc danh sách dữ liệu từ WordPress...</p>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <div class="compare-panel" id="comparePanel">
-        <div class="compare-header">
-            <h3>Bảng Đối Chiếu Thông Tin Chuyên Sâu</h3>
-            <button class="compare-close" onclick="closeCompare()">✕</button>
-        </div>
-        <div class="compare-table-wrap">
-            <table class="compare-table">
-                <thead id="compareHead"></thead>
-                <tbody id="compareBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <script>
-        let allData = [];
-        let filteredData = [];
-        let selected = [];
-
-        // KHỞI CHẠY TẢI DỮ LIỆU QUA API PROXY CỦA VERCEL TRỎ VỀ WORDPRESS
-        async function loadData() {
-            try {
-                // Gọi API proxy với phương thức POST như cấu hình chuẩn cũ của bạn
-                const response = await fetch('/api/proxy', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Mã phản hồi cổng kết nối bị từ chối: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                // CHUẨN HÓA DỮ LIỆU ĐẦU VÀO ĐỂ TRÁNH LỖI KHI CÓ TRƯỜNG DỮ LIỆU TRỐNG TRÊN WORDPRESS
-                allData = data.map(item => {
-                    // Ưu tiên chạy qua hệ thống xử lý ảnh proxy của bạn để tránh lỗi chặn CORS
-                    const finalImg = item.imgProxy || item.featuring || item.featureimg || 'https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS';
-                    
-                    return {
-                        id: String(item.id || ''),
-                        title: item.title || 'Tin đăng Bất Động Sản',
-                        formatedPrice: item.formatedPrice || 'Liên hệ',
-                        price: Number(item.price) || 0,
-                        total_area: Number(item.total_area) || 0,
-                        rstype: item.rstype || 'Chưa phân loại',
-                        bed: Number(item.bed) || 0,
-                        bath: Number(item.bath) || 0,
-                        direction: item.direction || '—',
-                        address: item.address || '—',
-                        phone: item.phone || '—',
-                        featuring: finalImg
-                    };
-                });
-
-                filteredData = [...allData];
-                
-                document.getElementById('statsBadge').textContent = `Tổng kho dữ liệu WordPress: ${allData.length} tin`;
-                
-                initTypeFilter();
-                renderCards(filteredData);
-
-            } catch (error) {
-                console.error("Lỗi đồng bộ dữ liệu Vercel:", error);
-                document.getElementById('propertiesGrid').innerHTML = `
-                    <div class="error-state">
-                        <p style="color: #ef4444; font-weight: 600; font-size: 16px; margin-bottom: 8px;">✕ Không thể nạp kho dữ liệu</p>
-                        <p style="color: var(--muted); font-size: 14px;">Chi tiết lỗi: ${error.message}</p>
-                        <p style="color: var(--muted); font-size: 13px; margin-top: 10px;">Vui lòng đảm bảo bạn đã lưu cấu hình và đồng bộ tin thành công bên WordPress Admin.</p>
+                <div class="card-body">
+                    <span class="card-id">Mã tin: #${i.id}</span>
+                    <h2 class="card-title" title="${i.title}">${i.title}</h2>
+                    <div class="card-price-row">
+                        <span class="card-price">${i.formatedPrice}</span>
+                        <span class="card-area">${i.total_area ? i.total_area + ' m²' : '—'}</span>
                     </div>
-                `;
-                document.getElementById('statsBadge').textContent = `Lỗi kết nối API`;
-            }
-        }
-
-        function initTypeFilter() {
-            const types = [...new Set(allData.map(item => item.rstype))].filter(Boolean);
-            const select = document.getElementById('typeFilter');
-            types.sort().forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t;
-                opt.textContent = t;
-                select.appendChild(opt);
-            });
-        }
-
-        function renderCards(items) {
-            const grid = document.getElementById('propertiesGrid');
-            if(items.length === 0) {
-                grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--muted)">Không tìm thấy bất động sản nào khớp với bộ lọc dữ liệu của bạn.</div>`;
-                return;
-            }
-
-            grid.innerHTML = items.map(i => {
-                const isSel = selected.includes(i.id);
-                return `
-                    <div class="card" data-id="${i.id}">
-                        <div class="card-img-wrap">
-                            <img src="${i.featuring}" alt="${i.title}" onerror="this.src='https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS'">
-                            <span class="badge-type">${i.rstype}</span>
-                            <button class="btn-compare-trigger ${isSel ? 'active' : ''}" onclick="toggleCompare('${i.id}', this)" title="Thêm vào bảng so sánh">
-                                ${isSel ? '✓' : '＋'}
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <span class="card-id">Mã tin: #${i.id}</span>
-                            <h2 class="card-title" title="${i.title}">${i.title}</h2>
-                            <div class="card-price-row">
-                                <span class="card-price">${i.formatedPrice}</span>
-                                <span class="card-area">${i.total_area ? i.total_area + ' m²' : '—'}</span>
-                            </div>
-                            <div class="card-specs">
-                                <div class="spec-item"><span>🛏</span> Ph.ngủ: ${i.bed || '—'}</div>
-                                <div class="spec-item"><span>🚿</span> Ph.tắm: ${i.bath || '—'}</div>
-                                <div class="spec-item"><span>🧭</span> Hướng: ${i.direction}</div>
-                            </div>
-                            <div class="card-footer">
-                                <span class="address-text" title="${i.address}">📍 ${i.address}</span>
-                                <a href="tel:${i.phone}" class="phone-link">📞 ${i.phone}</a>
-                            </div>
-                        </div>
+                    <div class="card-specs">
+                        <div class="spec-item"><span>🛏</span> Ph.ngủ: ${i.bed || '—'}</div>
+                        <div class="spec-item"><span>🚿</span> Ph.tắm: ${i.bath || '—'}</div>
+                        <div class="spec-item"><span>🧭</span> Hướng: ${i.direction}</div>
                     </div>
-                `;
-            }).join('');
+                    <div class="card-footer">
+                        <span class="address-text" title="${i.address}">📍 ${i.address}</span>
+                        <a href="tel:${i.phone}" class="phone-link">📞 ${i.phone}</a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function filterData() {
+    const sWord = document.getElementById('searchInp').value.toLowerCase().trim();
+    const type = document.getElementById('typeFilter').value;
+    const areaS = document.getElementById('areaSort').value;
+    const priceS = document.getElementById('priceSort').value;
+
+    filteredData = allData.filter(item => {
+        const matchWord = !sWord || item.title.toLowerCase().includes(sWord) || item.address.toLowerCase().includes(sWord) || item.id.includes(sWord);
+        const matchType = !type || item.rstype === type;
+        return matchWord && matchType;
+    });
+
+    if (areaS) {
+        filteredData.sort((a, b) => areaS === 'asc' ? a.total_area - b.total_area : b.total_area - a.total_area);
+    }
+    if (priceS) {
+        filteredData.sort((a, b) => priceS === 'asc' ? a.price - b.price : b.price - a.price);
+    }
+
+    renderCards(filteredData);
+}
+
+function toggleCompare(id, btn) {
+    id = String(id);
+    if (selected.includes(id)) {
+        selected = selected.filter(x => x !== id);
+        btn.classList.remove('active');
+        btn.textContent = '＋';
+    } else {
+        if (selected.length >= 4) {
+            alert('Hệ thống chỉ hỗ trợ so sánh tối đa 4 tin đăng cùng lúc để đảm bảo giao diện hiển thị tốt nhất.');
+            return;
         }
+        selected.push(id);
+        btn.classList.add('active');
+        btn.textContent = '✓';
+    }
 
-        function filterData() {
-            const sWord = document.getElementById('searchInp').value.toLowerCase().trim();
-            const type = document.getElementById('typeFilter').value;
-            const areaS = document.getElementById('areaSort').value;
-            const priceS = document.getElementById('priceSort').value;
+    if (selected.length > 0) {
+        buildCompareTable();
+        document.getElementById('comparePanel').classList.add('visible');
+    } else {
+        closeCompare();
+    }
+}
 
-            filteredData = allData.filter(item => {
-                const matchWord = !sWord || item.title.toLowerCase().includes(sWord) || item.address.toLowerCase().includes(sWord) || item.id.includes(sWord);
-                const matchType = !type || item.rstype === type;
-                return matchWord && matchType;
-            });
+function closeCompare() {
+    document.getElementById('comparePanel').classList.remove('visible');
+}
 
-            if (areaS) {
-                filteredData.sort((a, b) => areaS === 'asc' ? a.total_area - b.total_area : b.total_area - a.total_area);
-            }
-            if (priceS) {
-                filteredData.sort((a, b) => priceS === 'asc' ? a.price - b.price : b.price - a.price);
-            }
+function buildCompareTable() {
+    const items = allData.filter(d => selected.includes(d.id));
+    const fields = [
+        { l: 'Mức giá', k: 'formatedPrice' },
+        { l: 'Diện tích', k: 'total_area', fmt: v => v ? v + ' m²' : '—' },
+        { l: 'Loại hình BĐS', k: 'rstype' },
+        { l: 'Phòng ngủ', k: 'bed' },
+        { l: 'Phòng tắm', k: 'bath' },
+        { l: 'Hướng nhà', k: 'direction' },
+        { l: 'Địa chỉ vị trí', k: 'address' },
+        { l: 'Hotline liên hệ', k: 'phone', fmt: v => v ? `<a href="tel:${v}" style="color:var(--gold); font-weight:600; text-decoration:none;">📞 ${v}</a>` : '—' },
+    ];
 
-            renderCards(filteredData);
-        }
+    document.getElementById('compareHead').innerHTML =
+        '<th class="row-label">Tiêu chí đối chiếu</th>'
+        + items.map(i => `<th><div class="compare-prop-name">${i.title}</div><small style="color:var(--muted)">#${i.id}</small></th>`).join('');
 
-        function toggleCompare(id, btn) {
-            id = String(id);
-            if (selected.includes(id)) {
-                selected = selected.filter(x => x !== id);
-                btn.classList.remove('active');
-                btn.textContent = '＋';
-            } else {
-                if (selected.length >= 4) {
-                    alert('Hệ thống chỉ hỗ trợ so sánh tối đa 4 tin đăng cùng lúc để đảm bảo giao diện hiển thị tốt nhất.');
-                    return;
-                }
-                selected.push(id);
-                btn.classList.add('active');
-                btn.textContent = '✓';
-            }
+    document.getElementById('compareBody').innerHTML =
+        fields.map(f => `<tr>
+            <td class="row-label">${f.l}</td>
+            ${items.map(i => {
+                const val = i[f.k];
+                return `<td>${f.fmt ? f.fmt(val) : (val || '—')}</td>`;
+            }).join('')}
+        </tr>`).join('');
+}
 
-            if (selected.length > 0) {
-                buildCompareTable();
-                document.getElementById('comparePanel').classList.add('visible');
-            } else {
-                closeCompare();
-            }
-        }
-
-        function closeCompare() {
-            document.getElementById('comparePanel').classList.remove('visible');
-        }
-
-        function buildCompareTable() {
-            const items = allData.filter(d => selected.includes(d.id));
-            const fields = [
-                { l: 'Mức giá', k: 'formatedPrice' },
-                { l: 'Diện tích', k: 'total_area', fmt: v => v ? v + ' m²' : '—' },
-                { l: 'Loại hình BĐS', k: 'rstype' },
-                { l: 'Phòng ngủ', k: 'bed' },
-                { l: 'Phòng tắm', k: 'bath' },
-                { l: 'Hướng nhà', k: 'direction' },
-                { l: 'Địa chỉ vị trí', k: 'address' },
-                { l: 'Hotline liên hệ', k: 'phone', fmt: v => v ? `<a href="tel:${v}" style="color:var(--gold); font-weight:600; text-decoration:none;">📞 ${v}</a>` : '—' },
-            ];
-
-            document.getElementById('compareHead').innerHTML =
-                '<th class="row-label">Tiêu chí đối chiếu</th>'
-                + items.map(i => `<th><div class="compare-prop-name">${i.title}</div><small style="color:var(--muted)">#${i.id}</small></th>`).join('');
-
-            document.getElementById('compareBody').innerHTML =
-                fields.map(f => `<tr>
-                    <td class="row-label">${f.l}</td>
-                    ${items.map(i => {
-                        const val = i[f.k];
-                        return `<td>${f.fmt ? f.fmt(val) : (val || '—')}</td>`;
-                    }).join('')}
-                </tr>`).join('');
-                
-            document.getElementById('comparePanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        // Chạy tải dữ liệu khi vừa bật trang lên
-        window.addEventListener('DOMContentLoaded', loadData);
-    </script>
-</body>
-</html>
+window.addEventListener('DOMContentLoaded', loadData);

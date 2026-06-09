@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // ── PROXY ẢNH (GET): Giữ nguyên cơ chế bypass ảnh cũ của bạn ──
+  // ── PROXY ẢNH (GET) ────────────────────────────────────────
   if (req.method === 'GET' && req.query.img) {
     const url = decodeURIComponent(req.query.img);
     const allowed = ['dropbox.com', 'nks.vn', 'data.nks.vn', 'online.nks.vn'];
@@ -32,23 +32,45 @@ export default async function handler(req, res) {
     }
   }
 
-  // ── LẤY DỮ LIỆU (POST): Đọc kho dữ liệu sạch từ cổng REST API WordPress của bạn ──
+  // ── LẤY DỮ LIỆU (POST): Gọi sang REST API WordPress ────────────────
   if (req.method === 'POST') {
     try {
       const targetUrl = 'https://nksbds.page.gd/wp-json/nks/v1/properties';
 
       const response = await fetch(targetUrl, {
-        method: 'GET', // Chuyển thành GET để gọi cổng REST API trên WordPress
-        headers: { 'Content-Type': 'application/json' }
+        method: 'GET',
+        headers: { 
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Vercel Serverless Function)'
+        }
       });
 
+      // Đọc dữ liệu dạng Text trước để tránh lỗi sập hệ thống JSON.parse nếu WP trả về mã lỗi HTML
+      const responseText = await response.text();
+
       if (!response.ok) {
-        throw new Error(`WordPress API trả về mã lỗi: ${response.status}`);
+        return res.status(500).json({ 
+          error: `WordPress báo lỗi HTTP ${response.status}`, 
+          debug: responseText.substring(0, 300) 
+        });
       }
 
-      const items = await response.json();
+      // Thử kiểm tra xem nội dung nhận được có phải JSON chuẩn không
+      let items;
+      try {
+        items = JSON.parse(responseText);
+      } catch (e) {
+        return res.status(500).json({ 
+          error: "Dữ liệu trả về từ WordPress không phải là JSON chuẩn!", 
+          debug: responseText.substring(0, 500) // Trả về đoạn code lỗi PHP/HTML để Dev đọc được luôn
+        });
+      }
 
-      // Đồng bộ hóa cấu trúc ảnh đi qua hệ thống proxy để chống lỗi hiển thị hình ảnh
+      if (!Array.isArray(items)) {
+        return res.status(200).json([]);
+      }
+
+      // Chuẩn hóa cấu trúc ảnh đi qua hệ thống proxy để chống lỗi hiển thị hình ảnh
       const mappedItems = items.map(item => {
         const rawImg = item.featureimg || null;
         return {
@@ -61,9 +83,9 @@ export default async function handler(req, res) {
       return res.status(200).json(mappedItems);
 
     } catch (error) {
-      return res.status(500).json({ error: 'Không thể kết nối lấy dữ liệu từ WordPress: ' + error.message });
+      return res.status(500).json({ error: 'Mất kết nối máy chủ Proxy: ' + error.message });
     }
   }
 
-  return res.status(405).json({ error: 'Phương thức không được hệ thống hỗ trợ' });
+  return res.status(405).json({ error: 'Phương thức không được hỗ trợ' });
 }
