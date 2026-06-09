@@ -1,189 +1,1016 @@
-let allData = [];
-let filteredData = [];
-let selected = [];
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NKS — Bất Động Sản</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{
+            --navy:#0a1628;--blue:#0077bb;--blue-dk:#005c91;--blue-lt:#dff0fb;
+            --gold:#c8973a;--gold-lt:#fef3dc;
+            --cream:#fafaf8;--white:#ffffff;
+            --text:#0d1b2a;--text-2:#374b5e;--muted:#7a909f;
+            --border:#e0e9f0;--border-2:#c8d9e6;
+            --r:14px;--r-sm:8px;
+            --shadow:0 2px 16px rgba(0,119,187,.09);
+            --shadow-lg:0 16px 56px rgba(0,0,0,.13);
+        }
+        html{scroll-behavior:smooth}
+        body{font-family:'Outfit',sans-serif;background:var(--cream);color:var(--text);min-height:100vh}
 
-async function loadData() {
-    try {
-        const response = await fetch('/api/proxy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        });
+        /* ── HEADER ────────────────────────────────── */
+        header{
+            position:sticky;top:0;z-index:200;
+            background:rgba(255,255,255,.96);
+            backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--border);
+        }
+        .hdr{
+            max-width:1400px;margin:auto;
+            padding:0 clamp(16px,4vw,56px);
+            height:64px;display:flex;align-items:center;gap:16px;
+        }
+        .logo{display:flex;align-items:center;gap:12px;text-decoration:none}
+        .logo-sq{
+            width:38px;height:38px;border-radius:10px;
+            background:linear-gradient(135deg,var(--blue),var(--blue-dk));
+            display:flex;align-items:center;justify-content:center;
+            font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:#fff;
+            box-shadow:0 4px 14px rgba(0,119,187,.35);
+        }
+        .logo-text{font-size:15px;font-weight:600;color:var(--text);line-height:1.2}
+        .logo-sub{font-size:11px;color:var(--muted);font-weight:400}
+        .hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px}
 
-        const resData = await response.json();
+        .pill{
+            display:flex;align-items:center;gap:7px;
+            padding:6px 14px;border-radius:999px;
+            background:var(--cream);border:1px solid var(--border);
+            font-size:12px;color:var(--muted);font-weight:500;
+        }
+        .dot{
+            width:7px;height:7px;border-radius:50%;
+            background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2);flex-shrink:0;
+        }
+        .dot.spin{background:var(--gold);box-shadow:0 0 0 3px rgba(200,151,58,.2);animation:dotpulse .8s infinite}
+        .dot.err{background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.2);animation:none}
+        @keyframes dotpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
 
-        if (!response.ok) {
-            // Hiển thị trực tiếp lỗi hệ thống hoặc lỗi PHP/HTML của WordPress lên màn hình
-            throw new Error(resData.error + (resData.debug ? ` | Chi tiết: ${resData.debug}` : ''));
+        .btn{
+            display:inline-flex;align-items:center;gap:6px;
+            padding:9px 20px;border-radius:var(--r-sm);
+            font-family:inherit;font-size:13px;font-weight:600;
+            cursor:pointer;border:none;transition:all .18s;text-decoration:none;white-space:nowrap;
+        }
+        .btn-outline{background:var(--white);color:var(--text-2);border:1.5px solid var(--border)}
+        .btn-outline:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt)}
+        .btn-solid{background:var(--blue);color:#fff;box-shadow:0 3px 12px rgba(0,119,187,.3)}
+        .btn-solid:hover{background:var(--blue-dk);transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,119,187,.35)}
+        .badge{background:var(--gold);color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700}
+
+        /* ── HERO ────────────────────────────────── */
+        .hero{
+            background:linear-gradient(165deg, #0a1628 0%, #0d2744 55%, #0a3a6e 100%);
+            padding:64px clamp(16px,4vw,56px) 72px;
+            position:relative;overflow:hidden;
+        }
+        .hero::before{
+            content:'';position:absolute;inset:0;
+            background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230077bb' fill-opacity='0.06'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events:none;
+        }
+        .hero::after{
+            content:'';position:absolute;
+            width:600px;height:600px;border-radius:50%;
+            background:radial-gradient(circle,rgba(0,119,187,.15) 0%,transparent 70%);
+            right:-100px;top:-100px;pointer-events:none;
+        }
+        .hero-inner{max-width:1400px;margin:auto;position:relative;z-index:1}
+        .hero-label{
+            display:inline-flex;align-items:center;gap:8px;
+            background:rgba(0,119,187,.2);border:1px solid rgba(0,119,187,.35);
+            color:#7ec8f0;font-size:12px;font-weight:600;
+            padding:5px 14px;border-radius:999px;margin-bottom:20px;letter-spacing:.5px;
+        }
+        .hero h1{
+            font-family:'Playfair Display',serif;
+            font-size:clamp(28px,5vw,52px);font-weight:700;
+            color:#fff;line-height:1.15;margin-bottom:14px;
+        }
+        .hero h1 em{font-style:italic;color:#7ec8f0}
+        .hero-sub{color:rgba(255,255,255,.55);font-size:15px;max-width:520px;line-height:1.7}
+
+        /* Stats row */
+        .hero-stats{
+            display:flex;gap:32px;margin-top:40px;flex-wrap:wrap;
+        }
+        .hstat{border-left:2px solid rgba(0,119,187,.5);padding-left:16px}
+        .hstat-n{font-size:26px;font-weight:700;color:#fff;font-family:'Playfair Display',serif}
+        .hstat-l{font-size:12px;color:rgba(255,255,255,.45);margin-top:2px;font-weight:400}
+
+        /* ── TOOLBAR ────────────────────────────── */
+        .toolbar-wrap{
+            max-width:1400px;margin:auto;
+            padding:28px clamp(16px,4vw,56px) 0;
+        }
+        .toolbar{
+            display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+            background:var(--white);border:1.5px solid var(--border);
+            border-radius:var(--r);padding:14px 20px;
+            box-shadow:var(--shadow);margin-bottom:28px;
+        }
+        .srch{position:relative;flex:1;min-width:200px;max-width:380px}
+        .srch svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);flex-shrink:0}
+        .srch input{
+            width:100%;padding:9px 12px 9px 38px;
+            border:1.5px solid var(--border);border-radius:var(--r-sm);
+            font-size:13px;font-family:inherit;color:var(--text);
+            background:var(--cream);outline:none;transition:all .18s;
+        }
+        .srch input:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(0,119,187,.1)}
+        select.flt{
+            padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);
+            font-size:13px;font-family:inherit;color:var(--text-2);
+            background:var(--cream);cursor:pointer;outline:none;transition:all .18s;min-width:145px;
+        }
+        select.flt:focus{border-color:var(--blue)}
+        .rc{margin-left:auto;font-size:13px;color:var(--muted)}
+        .rc strong{color:var(--blue);font-weight:700}
+
+        /* ── COMPARE PANEL ─────────────────────── */
+        .cpanel{
+            max-width:1400px;margin:0 auto 28px;
+            padding:0 clamp(16px,4vw,56px);display:none;
+        }
+        .cpanel.on{display:block;animation:fadeSlide .3s ease}
+        @keyframes fadeSlide{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+        .cpanel-inner{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-lg)}
+
+        /* Header bar */
+        .cpanel-head{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;border-bottom:2px solid var(--blue)}
+        .cpanel-title{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+        .cpanel-title span{color:var(--blue)}
+        .cpanel-head-right{display:flex;align-items:center;gap:14px}
+        .diff-toggle{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-2);cursor:pointer}
+        .diff-toggle input{width:15px;height:15px;cursor:pointer;accent-color:var(--blue)}
+        .cpanel-close{background:none;border:1.5px solid var(--border);color:var(--muted);cursor:pointer;width:28px;height:28px;border-radius:50%;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .18s}
+        .cpanel-close:hover{background:#fef2f2;border-color:#fecaca;color:#ef4444}
+
+        /* Product cards row */
+        .cmp-cards{display:grid;border-bottom:2px solid var(--border)}
+        .cmp-card-col{border-right:1px solid var(--border);padding:20px 16px;display:flex;flex-direction:column;align-items:center;position:relative;min-width:180px}
+        .cmp-card-col:last-child{border-right:none}
+        .cmp-card-col.add-slot{justify-content:center;align-items:center;background:var(--cream);cursor:pointer;transition:background .18s;min-height:200px}
+        .cmp-card-col.add-slot:hover{background:var(--blue-lt)}
+        .cmp-add-icon{width:52px;height:52px;border-radius:50%;border:2px dashed var(--border-2);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--muted);margin-bottom:10px}
+        .cmp-add-txt{font-size:13px;color:var(--muted);font-weight:500;text-align:center}
+        .cmp-remove{position:absolute;top:8px;right:8px;background:none;border:1.5px solid var(--border);color:var(--muted);cursor:pointer;width:22px;height:22px;border-radius:50%;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .18s}
+        .cmp-remove:hover{background:#fef2f2;border-color:#fecaca;color:#ef4444}
+        .cmp-img{width:100%;height:140px;object-fit:cover;border-radius:var(--r-sm);margin-bottom:10px;background:var(--blue-lt);display:block}
+        .cmp-name{font-size:13px;font-weight:700;color:var(--text);text-align:center;line-height:1.4;margin-bottom:5px}
+        .cmp-price{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--blue);margin-bottom:3px}
+        .cmp-id{font-size:11px;color:var(--muted)}
+
+        /* Section header */
+        .csection{border-top:1px solid var(--border)}
+        .csection-head{display:flex;align-items:center;gap:10px;padding:13px 20px;background:var(--cream);border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+        .csection-icon{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);transition:transform .2s}
+        .csection-icon.open{transform:rotate(180deg)}
+        .csection-label{font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.5px}
+        .csection-star{color:var(--gold);margin-left:4px}
+        .cscroll{overflow-x:auto}
+        .ctable{width:100%;border-collapse:collapse;font-size:13px}
+        .ctable tr{border-bottom:1px solid var(--border)}
+        .ctable tr:last-child{border-bottom:none}
+        .ctable td{padding:12px 20px;color:var(--text-2);vertical-align:middle;border-right:1px solid var(--border)}
+        .ctable td:last-child{border-right:none}
+        .ctable tr:hover td{background:rgba(0,119,187,.03)}
+        .ctable .rlabel{font-weight:500;color:var(--text-2);background:var(--cream)!important;font-size:13px;width:200px;min-width:160px;white-space:nowrap}
+        .ctable .rval{color:var(--text)}
+        .ctable .rval.price{color:var(--blue);font-weight:700;font-size:16px}
+        .ctable tr.same.diffmode{display:none}
+
+        /* ── GRID ────────────────────────────────── */
+        .grid-wrap{max-width:1400px;margin:auto;padding:0 clamp(16px,4vw,56px) 56px}
+        .grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr));
+            gap:22px;
         }
 
-        allData = resData.map(item => {
-            const finalImg = item.imgProxy || item.featuring || item.featureimg || 'https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS';
-            return {
-                id: String(item.id || ''),
-                title: item.title || 'Tin đăng Bất Động Sản',
-                formatedPrice: item.formatedPrice || 'Liên hệ',
-                price: Number(item.price) || 0,
-                total_area: Number(item.total_area) || 0,
-                rstype: item.rstype || 'Chưa phân loại',
-                bed: Number(item.bed) || 0,
-                bath: Number(item.bath) || 0,
-                direction: item.direction || '—',
-                address: item.address || '—',
-                phone: item.phone || '—',
-                featuring: finalImg
-            };
+        /* ── CARD ────────────────────────────────── */
+        .card{
+            background:var(--white);border:1.5px solid var(--border);
+            border-radius:var(--r);overflow:hidden;
+            display:flex;flex-direction:column;
+            transition:transform .22s,box-shadow .22s,border-color .22s;
+            animation:cardUp .4s ease both;
+        }
+        .card:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg);border-color:var(--border-2)}
+        .card.sel{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,119,187,.12),var(--shadow)}
+        @keyframes cardUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+        .card-img{
+            position:relative;width:100%;height:190px;
+            overflow:hidden;background:var(--blue-lt);flex-shrink:0;
+        }
+        .card-img::after{
+            content:'';position:absolute;inset:0;
+            background:linear-gradient(to top,rgba(10,22,40,.45) 0%,transparent 60%);
+        }
+        .card-img img{
+            width:100%;height:100%;object-fit:cover;
+            transition:transform .5s;display:block;
+        }
+        .card:hover .card-img img{transform:scale(1.07)}
+
+        .card-sel-badge{
+            position:absolute;top:12px;right:12px;z-index:2;
+            background:var(--blue);color:#fff;
+            font-size:11px;font-weight:700;
+            padding:4px 11px;border-radius:999px;
+            box-shadow:0 2px 10px rgba(0,119,187,.45);
+        }
+        .card-type{
+            position:absolute;bottom:12px;left:12px;z-index:2;
+            background:rgba(255,255,255,.93);color:var(--blue-dk);
+            font-size:11px;font-weight:700;
+            padding:4px 10px;border-radius:6px;
+            backdrop-filter:blur(6px);
+        }
+
+        .card-body{padding:16px 18px 18px;display:flex;flex-direction:column;flex:1}
+        .card-title{
+            font-size:14px;font-weight:600;color:var(--text);
+            line-height:1.45;display:-webkit-box;
+            -webkit-line-clamp:2;-webkit-box-orient:vertical;
+            overflow:hidden;min-height:41px;margin-bottom:8px;
+        }
+        .card-price{
+            font-family:'Playfair Display',serif;
+            font-size:20px;font-weight:700;color:var(--blue);
+            margin-bottom:12px;
+        }
+        .card-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;flex:1}
+        .tag{
+            font-size:11px;font-weight:500;
+            background:var(--blue-lt);color:var(--blue-dk);
+            padding:3px 9px;border-radius:999px;
+            border:1px solid var(--border-2);
+        }
+        .card-addr{
+            font-size:11px;color:var(--muted);margin-bottom:12px;
+            display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;
+        }
+        .btn-sel{
+            width:100%;padding:10px;
+            border:1.5px solid var(--border);border-radius:var(--r-sm);
+            background:var(--cream);color:var(--muted);
+            font-size:13px;font-weight:600;
+            cursor:pointer;transition:all .18s;font-family:inherit;
+        }
+        .btn-sel:hover{background:var(--blue-lt);color:var(--blue-dk);border-color:var(--blue)}
+        .btn-sel.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+        /* ── SKELETON ── */
+        .sk{animation:sk 1.4s infinite}
+        @keyframes sk{0%,100%{opacity:.4}50%{opacity:.75}}
+        .sk-img{width:100%;height:190px;background:var(--border)}
+        .sk-ln{height:12px;background:var(--border);border-radius:4px;margin-bottom:9px}
+        .sk-btn{height:36px;background:var(--border);border-radius:var(--r-sm);margin-top:10px}
+
+        /* ── EMPTY ── */
+        .empty{
+            grid-column:1/-1;text-align:center;
+            padding:64px 20px;color:var(--muted);
+        }
+        .empty .eicon{font-size:44px;margin-bottom:14px}
+
+        /* ── FLOAT BAR ─────────────────────────── */
+        .fbar{
+            position:fixed;bottom:28px;left:50%;
+            transform:translateX(-50%) translateY(120px);
+            background:var(--white);
+            border:2px solid var(--blue);border-radius:999px;
+            padding:12px 26px;
+            display:flex;align-items:center;gap:16px;
+            box-shadow:0 10px 48px rgba(0,119,187,.25);
+            transition:transform .34s cubic-bezier(.34,1.56,.64,1);
+            z-index:9999;white-space:nowrap;
+        }
+        .fbar.on{transform:translateX(-50%) translateY(0)}
+        .fbar-text{font-size:13px;color:var(--muted)}
+        .fbar-text strong{color:var(--blue);font-weight:700;font-size:15px}
+        .fbar-cmp{
+            background:var(--blue);color:#fff;
+            border:none;padding:9px 22px;border-radius:999px;
+            font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+            transition:background .18s;box-shadow:0 3px 14px rgba(0,119,187,.35);
+        }
+        .fbar-cmp:hover{background:var(--blue-dk)}
+        .fbar-clr{
+            background:none;border:none;color:var(--muted);
+            cursor:pointer;font-size:13px;font-family:inherit;
+            padding:4px 8px;border-radius:6px;transition:all .18s;
+        }
+        .fbar-clr:hover{color:#ef4444;background:#fef2f2}
+
+        /* ── TOAST ── */
+        #toast{
+            position:fixed;bottom:96px;left:50%;
+            transform:translateX(-50%);
+            background:var(--navy);color:#fff;
+            padding:10px 22px;border-radius:999px;
+            font-size:13px;z-index:9999;
+            opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;
+        }
+        #toast.on{opacity:1}
+
+        /* ── ADMIN MODAL ──────────────────────── */
+        .modal-bg{
+            position:fixed;inset:0;background:rgba(10,22,40,.7);
+            backdrop-filter:blur(6px);z-index:500;
+            display:none;align-items:center;justify-content:center;padding:20px;
+        }
+        .modal-bg.on{display:flex;animation:fadein .2s ease}
+        @keyframes fadein{from{opacity:0}to{opacity:1}}
+        .modal{
+            background:var(--white);border-radius:var(--r);
+            width:100%;max-width:640px;max-height:90vh;overflow-y:auto;
+            box-shadow:var(--shadow-lg);animation:modalUp .25s ease;
+        }
+        @keyframes modalUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+        .modal-head{
+            display:flex;justify-content:space-between;align-items:center;
+            padding:22px 28px;border-bottom:1px solid var(--border);
+            position:sticky;top:0;background:var(--white);z-index:1;
+        }
+        .modal-head h2{font-family:'Playfair Display',serif;font-size:20px;color:var(--text)}
+        .modal-close{
+            background:none;border:none;font-size:20px;color:var(--muted);
+            cursor:pointer;padding:4px;line-height:1;transition:color .18s;
+        }
+        .modal-close:hover{color:var(--text)}
+        .modal-body{padding:28px}
+        .modal-tabs{
+            display:flex;gap:4px;
+            background:var(--cream);border:1px solid var(--border);
+            border-radius:var(--r-sm);padding:4px;margin-bottom:24px;
+        }
+        .mtab{
+            flex:1;padding:9px;border-radius:6px;
+            font-size:13px;font-weight:600;font-family:inherit;
+            cursor:pointer;border:none;background:none;color:var(--muted);
+            transition:all .18s;
+        }
+        .mtab.active{background:var(--white);color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+        .tab-pane{display:none}.tab-pane.on{display:block}
+
+        /* Form elements */
+        .form-group{margin-bottom:20px}
+        .form-label{display:block;font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:6px}
+        .form-input{
+            width:100%;padding:10px 14px;
+            border:1.5px solid var(--border);border-radius:var(--r-sm);
+            font-size:13px;font-family:inherit;color:var(--text);
+            background:var(--cream);outline:none;transition:all .18s;
+        }
+        .form-input:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(0,119,187,.1)}
+        .form-desc{font-size:11px;color:var(--muted);margin-top:5px}
+        .form-actions{display:flex;gap:10px;margin-top:24px}
+
+        /* Status in modal */
+        .api-status{
+            border-radius:var(--r-sm);padding:14px 18px;
+            font-size:13px;margin-bottom:20px;display:none;
+        }
+        .api-status.ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+        .api-status.err{background:#fef2f2;border:1px solid #fecaca;color:#dc2626}
+        .api-status.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+        .api-status.on{display:block}
+
+        /* Preview table in modal */
+        .prev-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
+        .prev-table th{background:var(--cream);padding:8px 12px;text-align:left;border-bottom:1.5px solid var(--border);color:var(--muted);font-weight:600;white-space:nowrap}
+        .prev-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text-2);vertical-align:middle}
+        .prev-table tr:last-child td{border-bottom:none}
+        .prev-thumb{width:48px;height:36px;object-fit:cover;border-radius:5px;background:var(--border);display:block}
+        .prev-badge{display:inline-block;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700;background:var(--blue-lt);color:var(--blue-dk)}
+
+        /* Sync log */
+        .synclog{
+            background:#0d1b2a;color:#94a3b8;
+            font-family:monospace;font-size:12px;
+            padding:16px;border-radius:var(--r-sm);
+            max-height:220px;overflow-y:auto;margin-top:16px;display:none;
+        }
+        .synclog.on{display:block}
+        .synclog .ok{color:#4ade80}.synclog .er{color:#f87171}.synclog .inf{color:#60a5fa}
+
+        /* Progress */
+        .prog{height:5px;background:var(--border);border-radius:999px;margin:12px 0;overflow:hidden;display:none}
+        .prog.on{display:block}
+        .prog-fill{height:100%;background:var(--blue);border-radius:999px;width:0;transition:width .35s}
+
+        /* Admin button in header */
+        .btn-admin{
+            padding:8px 16px;border-radius:var(--r-sm);
+            font-size:12px;font-weight:600;
+            background:var(--navy);color:#fff;border:none;cursor:pointer;
+            font-family:inherit;transition:all .18s;display:flex;align-items:center;gap:6px;
+        }
+        .btn-admin:hover{background:#1e3a5f}
+
+        @media(max-width:640px){
+            .toolbar{padding:12px 14px;gap:8px}
+            .srch{max-width:100%}
+            .hero-stats{gap:20px}
+            .fbar{border-radius:16px;padding:12px 16px;flex-wrap:wrap;justify-content:center;width:calc(100% - 24px);bottom:12px}
+            .hdr-right{gap:8px}
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="hdr">
+        <a class="logo" href="#">
+            <div class="logo-sq">N</div>
+            <div>
+                <div class="logo-text">NKS Property</div>
+                <div class="logo-sub">Hệ thống Đối Chiếu Bất Động Sản</div>
+            </div>
+        </a>
+        <div class="hdr-right">
+            <div class="pill">
+                <div class="dot spin" id="statusDot"></div>
+                <span id="statusText">Đang tải...</span>
+            </div>
+            <button class="btn btn-outline" onclick="fetchData()" id="syncBtn" title="Đồng bộ dữ liệu">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                Đồng bộ
+            </button>
+            <button class="btn btn-solid" id="compareBtn" style="display:none" onclick="openCompare()">
+                📊 So sánh <span class="badge" id="cmpCount">0</span>
+            </button>
+            <button class="btn-admin" onclick="openAdmin()">
+                ⚙️ Admin
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-inner">
+        <div class="hero-label">🏢 NKS Real Estate Platform</div>
+        <h1>Tìm kiếm & <em>So sánh</em><br>Bất Động Sản</h1>
+        <p class="hero-sub">Dữ liệu thời gian thực từ hệ thống NKS. Chọn tối đa 4 bất động sản để đối chiếu chi tiết.</p>
+        <div class="hero-stats">
+            <div class="hstat">
+                <div class="hstat-n" id="heroTotal">—</div>
+                <div class="hstat-l">Tin đăng</div>
+            </div>
+            <div class="hstat">
+                <div class="hstat-n" id="heroTypes">—</div>
+                <div class="hstat-l">Loại BĐS</div>
+            </div>
+            <div class="hstat">
+                <div class="hstat-n" id="heroImg">—</div>
+                <div class="hstat-l">Có hình ảnh</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- COMPARE PANEL -->
+<div class="cpanel" id="cpanel">
+    <div class="cpanel-inner">
+        <div class="cpanel-head">
+            <div class="cpanel-title">So sánh sản phẩm <span id="cmpNames"></span></div>
+            <div class="cpanel-head-right">
+                <label class="diff-toggle">
+                    <input type="checkbox" id="diffOnly" onchange="toggleDiff()">
+                    Chỉ xem điểm khác biệt
+                </label>
+                <button class="cpanel-close" onclick="closeCompare()" title="Đóng">✕</button>
+            </div>
+        </div>
+        <!-- Product cards row -->
+        <div class="cmp-cards" id="cmpCards"></div>
+        <!-- So sánh nhanh -->
+        <div class="csection" id="cmpTableWrap">
+            <div class="csection-head" onclick="toggleSection(this)">
+                <div class="csection-icon open">▲</div>
+                <div class="csection-label">So sánh nhanh</div>
+                <span class="csection-star">★</span>
+            </div>
+            <div class="cscroll">
+                <table class="ctable" id="cmpTable"></table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar-wrap">
+    <div class="toolbar">
+        <div class="srch">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="qInput" placeholder="Tìm kiếm BĐS, địa chỉ..." oninput="applyFilter()">
+        </div>
+        <select id="typeFilter" class="flt" onchange="applyFilter()">
+            <option value="">Tất cả loại</option>
+        </select>
+        <select id="sortBy" class="flt" onchange="applyFilter()">
+            <option value="">Sắp xếp</option>
+            <option value="pa">Giá tăng dần</option>
+            <option value="pd">Giá giảm dần</option>
+            <option value="aa">Diện tích tăng</option>
+            <option value="ad">Diện tích giảm</option>
+        </select>
+        <span class="rc" id="rc"></span>
+    </div>
+</div>
+
+<!-- GRID -->
+<div class="grid-wrap">
+    <div class="grid" id="grid">
+        ${[...Array(10)].map(()=>`
+        <div class="card sk">
+            <div class="sk-img"></div>
+            <div style="padding:16px 18px">
+                <div class="sk-ln" style="width:85%"></div>
+                <div class="sk-ln" style="width:55%"></div>
+                <div class="sk-btn"></div>
+            </div>
+        </div>`).join('')}
+    </div>
+</div>
+
+<!-- FLOAT BAR -->
+<div class="fbar" id="fbar">
+    <span class="fbar-text">Đã chọn <strong id="fCount">0</strong>/4 BĐS</span>
+    <button class="fbar-cmp" onclick="openCompare()">📊 So sánh ngay</button>
+    <button class="fbar-clr" onclick="clearSel()">✕ Xóa</button>
+</div>
+
+<div id="toast"></div>
+
+<!-- ADMIN MODAL -->
+<div class="modal-bg" id="adminModal">
+    <div class="modal">
+        <div class="modal-head">
+            <h2>⚙️ Quản trị hệ thống</h2>
+            <button class="modal-close" onclick="closeAdmin()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-tabs">
+                <button class="mtab active" onclick="switchTab('api')">🔌 Kết nối API</button>
+                <button class="mtab" onclick="switchTab('sync')">⟳ Đồng bộ dữ liệu</button>
+            </div>
+
+            <!-- TAB: API -->
+            <div class="tab-pane on" id="tab-api">
+                <div class="api-status" id="apiStatus"></div>
+                <div class="form-group">
+                    <label class="form-label">API URL</label>
+                    <input type="url" class="form-input" id="apiUrl"
+                           value="/api/proxy"
+                           placeholder="https://...">
+                    <div class="form-desc">Endpoint POST trả về danh sách BĐS</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">API Key <span style="color:var(--muted);font-weight:400">(tuỳ chọn)</span></label>
+                    <input type="password" class="form-input" id="apiKey"
+                           placeholder="Bearer token hoặc API key">
+                    <div class="form-desc">Để trống nếu API không yêu cầu xác thực</div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-solid" onclick="testApi()">🔌 Test kết nối</button>
+                    <button class="btn btn-outline" onclick="saveApiConfig()">💾 Lưu cấu hình</button>
+                </div>
+
+                <!-- Preview 5 tin -->
+                <div id="previewWrap" style="display:none;margin-top:24px">
+                    <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">
+                        5 tin mới nhất từ API
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table class="prev-table" id="previewTable"></table>
+                    </div>
+                    <div style="margin-top:14px;font-size:13px;color:var(--muted)">
+                        ✅ API hoạt động tốt.
+                        <a href="#" onclick="switchTab('sync');return false"
+                           style="color:var(--blue);font-weight:600;margin-left:6px">→ Đồng bộ dữ liệu</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: SYNC -->
+            <div class="tab-pane" id="tab-sync">
+                <div style="background:var(--cream);border:1px solid var(--border);border-radius:var(--r-sm);padding:16px;margin-bottom:20px">
+                    <div style="font-size:13px;color:var(--text-2);line-height:1.7">
+                        Nhấn <strong>Bắt đầu đồng bộ</strong> để tải toàn bộ dữ liệu BĐS từ API.<br>
+                        Dữ liệu sẽ được cập nhật tức thì trên giao diện.
+                    </div>
+                </div>
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                    <button class="btn btn-solid" id="syncStartBtn" onclick="startSync()" style="background:#16a34a;box-shadow:0 3px 12px rgba(22,163,74,.3)">
+                        ⟳ Bắt đầu đồng bộ
+                    </button>
+                    <span style="font-size:13px;color:var(--muted)">
+                        Hiện có <strong id="syncCount" style="color:var(--blue)">—</strong> tin
+                    </span>
+                </div>
+                <div class="prog" id="syncProg"><div class="prog-fill" id="syncFill"></div></div>
+                <div class="synclog" id="syncLog"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    /* ── State ── */
+    let ALL = [], filtered = [], selected = [];
+    const PROXY = '/api/proxy';
+    const NO_IMG = 'https://placehold.co/400x260/dff0fb/0077bb?text=NKS';
+
+    /* ── Helpers ─────────────────────────────────── */
+    const $  = id => document.getElementById(id);
+    const imgUrl = url => url ? (PROXY + '?img=' + encodeURIComponent(url)) : NO_IMG;
+
+    function setStatus(state, msg) {
+        const d = $('statusDot'), t = $('statusText');
+        d.className = 'dot' + (state==='loading'?' spin':state==='error'?' err':'');
+        t.textContent = msg;
+    }
+
+    function toast(msg) {
+        const t = $('toast');
+        t.textContent = msg; t.classList.add('on');
+        clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('on'), 2500);
+    }
+
+    function updateCmpUI() {
+        const n = selected.length;
+        $('cmpCount').textContent = n;
+        $('fCount').textContent   = n;
+        $('compareBtn').style.display = n > 0 ? 'inline-flex' : 'none';
+        $('fbar').classList.toggle('on', n > 0);
+    }
+
+    /* ── Fetch ───────────────────────────────────── */
+    async function fetchData() {
+        setStatus('loading','Đang đồng bộ...');
+        $('syncBtn').disabled = true;
+        renderSkel();
+        try {
+            const r = await fetch(PROXY, {method:'POST', headers:{'Content-Type':'application/json'}});
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const j = await r.json();
+
+            let items = [];
+            if (Array.isArray(j) && j[0])       items = j;
+            else if (Array.isArray(j.data))      items = j.data;
+            else if (Array.isArray(j.items))     items = j.items;
+            else if (Array.isArray(j.List))      items = j.List;
+
+            ALL = items.map(i => ({
+                ...i,
+                featuring: i.featureimg || i.featuring || i.image || null
+            }));
+
+            // Build type filter
+            const types = [...new Set(ALL.map(i=>i.rstype).filter(Boolean))].sort();
+            $('typeFilter').innerHTML = '<option value="">Tất cả loại</option>'
+                + types.map(t=>`<option value="${t}">${t}</option>`).join('');
+
+            // Hero stats
+            $('heroTotal').textContent = ALL.length;
+            $('heroTypes').textContent = types.length;
+            $('heroImg').textContent   = ALL.filter(i=>i.featuring).length;
+            $('syncCount').textContent = ALL.length;
+
+            setStatus('ok', ALL.length + ' bất động sản');
+            applyFilter();
+        } catch(e) {
+            setStatus('error','Lỗi: '+e.message);
+            $('grid').innerHTML = `<div class="empty"><div class="eicon">⚠️</div><p style="color:#ef4444">${e.message}</p></div>`;
+        } finally {
+            $('syncBtn').disabled = false;
+        }
+    }
+    window.fetchData = fetchData;
+
+    /* ── Filter ──────────────────────────────────── */
+    function applyFilter() {
+        const q    = $('qInput').value.toLowerCase().trim();
+        const type = $('typeFilter').value;
+        const sort = $('sortBy').value;
+
+        filtered = ALL.filter(i => {
+            const mq = !q || (i.title||'').toLowerCase().includes(q) || (i.address||'').toLowerCase().includes(q);
+            const mt = !type || i.rstype === type;
+            return mq && mt;
         });
 
-        filteredData = [...allData];
-        document.getElementById('statsBadge').textContent = `Tổng kho dữ liệu WordPress: ${allData.length} tin`;
-        
-        initTypeFilter();
-        renderCards(filteredData);
+        if (sort==='pa') filtered.sort((a,b)=>(a.price||0)-(b.price||0));
+        if (sort==='pd') filtered.sort((a,b)=>(b.price||0)-(a.price||0));
+        if (sort==='aa') filtered.sort((a,b)=>(a.total_area||0)-(b.total_area||0));
+        if (sort==='ad') filtered.sort((a,b)=>(b.total_area||0)-(a.total_area||0));
 
-    } catch (error) {
-        console.error("Lỗi đồng bộ dữ liệu Vercel:", error);
-        document.getElementById('propertiesGrid').innerHTML = `
-            <div class="error-state" style="grid-column:1/-1; text-align:left; background:#fff1f2; border:1px solid #fecdd3; padding:24px; border-radius:12px; max-width:800px; margin:0 auto;">
-                <p style="color: #e11d48; font-weight: 600; font-size: 16px; margin-bottom: 8px;">✕ Hệ thống chặn kết nối (Dữ liệu không đồng nhất)</p>
-                <p style="color: #4c0519; font-size: 13px; font-family:monospace; background:#fff; padding:12px; border-radius:6px; border:1px solid #ffe4e6; word-break:break-all;">
-                    ${error.message}
-                </p>
-                <p style="color: #633b48; font-size: 13px; margin-top: 12px; line-height:1.5;">
-                    💡 <strong>Cách xử lý:</strong> Lỗi này thông báo rằng đường dẫn <code>https://nksbds.page.gd/wp-json/nks/v1/properties</code> đang trả về trang lỗi trống hoặc lỗi bảo mật Host chứ không trả về chuỗi JSON tin đăng. Hãy chắc chắn rằng bạn đã kích hoạt Plugin <code>nks-bds.php</code> (Bản V5.0) trên website WordPress đó.
-                </p>
-            </div>
-        `;
-        document.getElementById('statsBadge').textContent = `Lỗi phản hồi hệ thống`;
+        $('rc').innerHTML = `Hiển thị <strong>${filtered.length}</strong> / ${ALL.length} tin`;
+        renderCards();
     }
-}
+    window.applyFilter = applyFilter;
 
-function initTypeFilter() {
-    const types = [...new Set(allData.map(item => item.rstype))].filter(Boolean);
-    const select = document.getElementById('typeFilter');
-    select.innerHTML = '<option value="">Tất cả loại hình</option>';
-    types.sort().forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t;
-        opt.textContent = t;
-        select.appendChild(opt);
-    });
-}
-
-function renderCards(items) {
-    const grid = document.getElementById('propertiesGrid');
-    if(items.length === 0) {
-        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--muted)">Không tìm thấy bất động sản nào khớp với bộ lọc dữ liệu của bạn.</div>`;
-        return;
-    }
-
-    grid.innerHTML = items.map(i => {
-        const isSel = selected.includes(i.id);
-        return `
-            <div class="card" data-id="${i.id}">
-                <div class="card-img-wrap">
-                    <img src="${i.featuring}" alt="${i.title}" onerror="this.src='https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS'">
-                    <span class="badge-type">${i.rstype}</span>
-                    <button class="btn-compare-trigger ${isSel ? 'active' : ''}" onclick="toggleCompare('${i.id}', this)" title="Thêm vào bảng so sánh">
-                        ${isSel ? '✓' : '＋'}
-                    </button>
+    /* ── Render ──────────────────────────────────── */
+    function renderSkel() {
+        $('grid').innerHTML = [...Array(10)].map(()=>`
+            <div class="card sk">
+                <div class="sk-img"></div>
+                <div style="padding:16px 18px">
+                    <div class="sk-ln" style="width:85%"></div>
+                    <div class="sk-ln" style="width:55%"></div>
+                    <div class="sk-btn"></div>
                 </div>
-                <div class="card-body">
-                    <span class="card-id">Mã tin: #${i.id}</span>
-                    <h2 class="card-title" title="${i.title}">${i.title}</h2>
-                    <div class="card-price-row">
-                        <span class="card-price">${i.formatedPrice}</span>
-                        <span class="card-area">${i.total_area ? i.total_area + ' m²' : '—'}</span>
-                    </div>
-                    <div class="card-specs">
-                        <div class="spec-item"><span>🛏</span> Ph.ngủ: ${i.bed || '—'}</div>
-                        <div class="spec-item"><span>🚿</span> Ph.tắm: ${i.bath || '—'}</div>
-                        <div class="spec-item"><span>🧭</span> Hướng: ${i.direction}</div>
-                    </div>
-                    <div class="card-footer">
-                        <span class="address-text" title="${i.address}">📍 ${i.address}</span>
-                        <a href="tel:${i.phone}" class="phone-link">📞 ${i.phone}</a>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function filterData() {
-    const sWord = document.getElementById('searchInp').value.toLowerCase().trim();
-    const type = document.getElementById('typeFilter').value;
-    const areaS = document.getElementById('areaSort').value;
-    const priceS = document.getElementById('priceSort').value;
-
-    filteredData = allData.filter(item => {
-        const matchWord = !sWord || item.title.toLowerCase().includes(sWord) || item.address.toLowerCase().includes(sWord) || item.id.includes(sWord);
-        const matchType = !type || item.rstype === type;
-        return matchWord && matchType;
-    });
-
-    if (areaS) {
-        filteredData.sort((a, b) => areaS === 'asc' ? a.total_area - b.total_area : b.total_area - a.total_area);
-    }
-    if (priceS) {
-        filteredData.sort((a, b) => priceS === 'asc' ? a.price - b.price : b.price - a.price);
+            </div>`).join('');
     }
 
-    renderCards(filteredData);
-}
-
-function toggleCompare(id, btn) {
-    id = String(id);
-    if (selected.includes(id)) {
-        selected = selected.filter(x => x !== id);
-        btn.classList.remove('active');
-        btn.textContent = '＋';
-    } else {
-        if (selected.length >= 4) {
-            alert('Hệ thống chỉ hỗ trợ so sánh tối đa 4 tin đăng cùng lúc để đảm bảo giao diện hiển thị tốt nhất.');
+    function renderCards() {
+        const g = $('grid');
+        if (!filtered.length) {
+            g.innerHTML = `<div class="empty"><div class="eicon">🔍</div><p>Không tìm thấy kết quả.</p></div>`;
             return;
         }
-        selected.push(id);
-        btn.classList.add('active');
-        btn.textContent = '✓';
+        g.innerHTML = filtered.map((item,i) => {
+            const on    = selected.includes(String(item.id));
+            const img   = item.imgProxy || imgUrl(item.featuring);
+            const price = item.formatedPrice || item.price_label || 'Liên hệ';
+            const area  = item.total_area ? item.total_area+' m²' : null;
+            return `<div class="card${on?' sel':''}" style="animation-delay:${Math.min(i,15)*32}ms">
+                <div class="card-img">
+                    <img src="${img}" alt="${item.title||''}" loading="lazy"
+                         onerror="this.onerror=null;this.src='${NO_IMG}'">
+                    ${on?'<span class="card-sel-badge">✓ Đã chọn</span>':''}
+                    ${item.rstype?`<span class="card-type">${item.rstype}</span>`:''}
+                </div>
+                <div class="card-body">
+                    <div class="card-title">${item.title||'Không có tiêu đề'}</div>
+                    <div class="card-price">${price}</div>
+                    <div class="card-meta">
+                        ${area?`<span class="tag">📐 ${area}</span>`:''}
+                        ${item.bed?`<span class="tag">🛏 ${item.bed} PN</span>`:''}
+                        ${item.bath?`<span class="tag">🚿 ${item.bath} PT</span>`:''}
+                        ${item.direction?`<span class="tag">🧭 ${item.direction}</span>`:''}
+                    </div>
+                    ${item.address?`<div class="card-addr">📍 ${item.address}</div>`:''}
+                    <button class="btn-sel${on?' on':''}" onclick="toggleSel('${item.id}')">
+                        ${on?'✓ Bỏ chọn':'+ So sánh'}
+                    </button>
+                </div>
+            </div>`;
+        }).join('');
     }
 
-    if (selected.length > 0) {
-        buildCompareTable();
-        document.getElementById('comparePanel').classList.add('visible');
-    } else {
-        closeCompare();
+    /* ── Select ──────────────────────────────────── */
+    function toggleSel(id) {
+        id = String(id);
+        const i = selected.indexOf(id);
+        if (i>-1) selected.splice(i,1);
+        else if (selected.length>=4) { toast('Chỉ chọn tối đa 4 BĐS để so sánh!'); return; }
+        else selected.push(id);
+        updateCmpUI(); renderCards();
     }
-}
+    window.toggleSel = toggleSel;
 
-function closeCompare() {
-    document.getElementById('comparePanel').classList.remove('visible');
-}
+    function clearSel() {
+        selected = [];
+        closeCompare(); updateCmpUI(); renderCards();
+    }
+    window.clearSel = clearSel;
 
-function buildCompareTable() {
-    const items = allData.filter(d => selected.includes(d.id));
-    const fields = [
-        { l: 'Mức giá', k: 'formatedPrice' },
-        { l: 'Diện tích', k: 'total_area', fmt: v => v ? v + ' m²' : '—' },
-        { l: 'Loại hình BĐS', k: 'rstype' },
-        { l: 'Phòng ngủ', k: 'bed' },
-        { l: 'Phòng tắm', k: 'bath' },
-        { l: 'Hướng nhà', k: 'direction' },
-        { l: 'Địa chỉ vị trí', k: 'address' },
-        { l: 'Hotline liên hệ', k: 'phone', fmt: v => v ? `<a href="tel:${v}" style="color:var(--gold); font-weight:600; text-decoration:none;">📞 ${v}</a>` : '—' },
-    ];
+    /* ── Compare ─────────────────────────────────── */
+    /* ── So sánh kiểu TMDT ── */
+    function openCompare() {
+        const items = ALL.filter(d=>selected.includes(String(d.id)));
+        if(!items.length) return;
 
-    document.getElementById('compareHead').innerHTML =
-        '<th class="row-label">Tiêu chí đối chiếu</th>'
-        + items.map(i => `<th><div class="compare-prop-name">${i.title}</div><small style="color:var(--muted)">#${i.id}</small></th>`).join('');
+        // Header names
+        $('cmpNames').textContent = items.map(i=>i.title||'BĐS #'+i.id).join(' & ');
 
-    document.getElementById('compareBody').innerHTML =
-        fields.map(f => `<tr>
-            <td class="row-label">${f.l}</td>
-            ${items.map(i => {
-                const val = i[f.k];
-                return `<td>${f.fmt ? f.fmt(val) : (val || '—')}</td>`;
-            }).join('')}
-        </tr>`).join('');
-}
+        // Product card columns
+        const PROXY = '/api/proxy';
+        const NO_IMG = 'https://placehold.co/400x260/dff0fb/0077bb?text=NKS';
+        let cardsHtml = items.map(i=>{
+            const img = i.imgProxy || (i.featuring ? PROXY+'?img='+encodeURIComponent(i.featuring) : NO_IMG);
+            const price = i.formatedPrice||i.price_label||'Liên hệ';
+            return `<div class="cmp-card-col">
+                <button class="cmp-remove" onclick="removeCmp('${i.id}')" title="Xóa">✕</button>
+                <img class="cmp-img" src="${img}" alt="${i.title||''}"
+                     onerror="this.onerror=null;this.src='${NO_IMG}'">
+                <div class="cmp-name">${i.title||'—'}</div>
+                <div class="cmp-price">${price}</div>
+                <div class="cmp-id">#${i.id}</div>
+            </div>`;
+        }).join('');
+        // Add slot nếu chưa đủ 4
+        if(items.length < 4) {
+            cardsHtml += `<div class="cmp-card-col add-slot" onclick="closeCompare()">
+                <div class="cmp-add-icon">+</div>
+                <div class="cmp-add-txt">Thêm sản phẩm</div>
+            </div>`;
+        }
+        // set grid cols
+        const cols = Math.min(items.length+1, 4);
+        $('cmpCards').style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        $('cmpCards').innerHTML = cardsHtml;
 
-window.addEventListener('DOMContentLoaded', loadData);
+        // Compare table
+        const fields = [
+            {l:'Giá',          k:'formatedPrice', cls:'price'},
+            {l:'Diện tích',    k:'total_area',    fmt:v=>v?v+' m²':'—'},
+            {l:'Loại BĐS',     k:'rstype'},
+            {l:'Phòng ngủ',    k:'bed'},
+            {l:'Phòng tắm',    k:'bath'},
+            {l:'Hướng',        k:'direction'},
+            {l:'Địa chỉ',      k:'address'},
+            {l:'Điện thoại',   k:'phone'},
+        ];
+
+        $('cmpTable').innerHTML = fields.map(f=>{
+            const vals = items.map(i=>f.fmt?f.fmt(i[f.k]):(i[f.k]||'—'));
+            const allSame = vals.every(v=>v===vals[0]);
+            return `<tr class="${allSame?'same':'diff'}">
+                <td class="rlabel">${f.l}</td>
+                ${vals.map(v=>`<td class="rval${f.cls?' '+f.cls:''}">${v}</td>`).join('')}
+            </tr>`;
+        }).join('');
+
+        // Sync diff checkbox
+        const cb = $('diffOnly');
+        if(cb) { cb.checked=false; document.querySelectorAll('.ctable tr.same').forEach(r=>r.classList.remove('diffmode')); }
+
+        $('cpanel').classList.add('on');
+        $('cpanel').scrollIntoView({behavior:'smooth',block:'start'});
+    }
+    window.openCompare = openCompare;
+
+    function removeCmp(id) {
+        selected = selected.filter(s=>s!==String(id));
+        updateCmpUI(); renderCards();
+        if(selected.length===0) { closeCompare(); return; }
+        openCompare();
+    }
+    window.removeCmp = removeCmp;
+
+    function toggleDiff() {
+        const on = $('diffOnly').checked;
+        document.querySelectorAll('.ctable tr.same').forEach(r=>{
+            r.classList.toggle('diffmode', on);
+        });
+    }
+    window.toggleDiff = toggleDiff;
+
+    function toggleSection(head) {
+        const icon = head.querySelector('.csection-icon');
+        const body = head.nextElementSibling;
+        icon.classList.toggle('open');
+        body.style.display = icon.classList.contains('open') ? 'block' : 'none';
+    }
+    window.toggleSection = toggleSection;
+
+    function closeCompare() { $('cpanel').classList.remove('on'); }
+    window.closeCompare = closeCompare;
+
+    /* ── ADMIN MODAL ─────────────────────────────── */
+    function openAdmin()  { $('adminModal').classList.add('on'); }
+    function closeAdmin() { $('adminModal').classList.remove('on'); }
+    window.openAdmin  = openAdmin;
+    window.closeAdmin = closeAdmin;
+
+    $('adminModal').addEventListener('click', e => { if(e.target===$('adminModal')) closeAdmin(); });
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('on'));
+        document.querySelectorAll('.mtab').forEach(b=>b.classList.remove('active'));
+        $('tab-'+tab).classList.add('on');
+        const idx = tab==='api'?0:1;
+        document.querySelectorAll('.mtab')[idx].classList.add('active');
+    }
+    window.switchTab = switchTab;
+
+    /* ── Test API ── */
+    async function testApi() {
+        const url = $('apiUrl').value.trim() || PROXY;
+        const st  = $('apiStatus');
+        st.className='api-status on warn'; st.textContent='⏳ Đang kiểm tra kết nối...';
+        $('previewWrap').style.display='none';
+        try {
+            const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}});
+            if(!r.ok) throw new Error('HTTP '+r.status);
+            const j = await r.json();
+            let items=[];
+            if(Array.isArray(j)&&j[0]) items=j;
+            else if(Array.isArray(j.data)) items=j.data;
+            else if(Array.isArray(j.items)) items=j.items;
+            const total = items.length;
+            if(!total) throw new Error('API trả về 0 items');
+
+            st.className='api-status on ok';
+            st.textContent=`✅ Kết nối thành công! Tổng: ${total} tin BĐS.`;
+
+            // Preview 5 tin
+            const prev = items.slice(0,5);
+            $('previewTable').innerHTML =
+                '<thead><tr><th>Ảnh</th><th>ID</th><th>Tiêu đề</th><th>Giá</th><th>Loại</th></tr></thead><tbody>'
+                + prev.map(it=>{
+                    const rawImg = it.featureimg||it.featuring||null;
+                    const iurl   = rawImg ? (PROXY+'?img='+encodeURIComponent(rawImg)) : '';
+                    return `<tr>
+                        <td>${iurl?`<img src="${iurl}" class="prev-thumb" onerror="this.style.opacity=0">`:'<div class="prev-thumb"></div>'}</td>
+                        <td><code style="font-size:11px">${it.id||'—'}</code></td>
+                        <td style="max-width:200px;font-weight:600">${it.title||'—'}</td>
+                        <td style="color:var(--blue);font-weight:700;white-space:nowrap">${it.formatedPrice||it.price_label||'—'}</td>
+                        <td>${it.rstype?`<span class="prev-badge">${it.rstype}</span>`:'—'}</td>
+                    </tr>`;
+                }).join('')+'</tbody>';
+            $('previewWrap').style.display='block';
+        } catch(e) {
+            st.className='api-status on err';
+            st.textContent='❌ Kết nối thất bại: '+e.message;
+        }
+    }
+    window.testApi = testApi;
+
+    function saveApiConfig() {
+        toast('✅ Đã lưu cấu hình API');
+    }
+    window.saveApiConfig = saveApiConfig;
+
+    /* ── Sync ── */
+    async function startSync() {
+        const btn  = $('syncStartBtn');
+        const log  = $('syncLog');
+        const prog = $('syncProg');
+        const fill = $('syncFill');
+
+        btn.disabled=true; btn.textContent='⏳ Đang đồng bộ...';
+        log.innerHTML=''; log.classList.add('on');
+        prog.classList.add('on'); fill.style.width='10%';
+
+        function addLog(msg, type='inf'){
+            log.innerHTML+=`<div class="${type}">${msg}</div>`;
+            log.scrollTop=log.scrollHeight;
+        }
+
+        addLog('🚀 Bắt đầu kết nối API...','inf');
+        fill.style.width='30%';
+
+        try {
+            const r = await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'}});
+            if(!r.ok) throw new Error('HTTP '+r.status);
+            const j = await r.json();
+            let items=[];
+            if(Array.isArray(j)&&j[0]) items=j;
+            else if(Array.isArray(j.data)) items=j.data;
+
+            fill.style.width='80%';
+            addLog(`📦 Nhận được ${items.length} tin BĐS từ API.`,'inf');
+
+            // Cập nhật ALL
+            ALL = items.map(i=>({...i, featuring:i.featureimg||i.featuring||null}));
+
+            // Update stats
+            const types = [...new Set(ALL.map(i=>i.rstype).filter(Boolean))].sort();
+            $('typeFilter').innerHTML = '<option value="">Tất cả loại</option>'
+                + types.map(t=>`<option value="${t}">${t}</option>`).join('');
+            $('heroTotal').textContent = ALL.length;
+            $('heroTypes').textContent = types.length;
+            $('heroImg').textContent   = ALL.filter(i=>i.featuring).length;
+            $('syncCount').textContent = ALL.length;
+
+            fill.style.width='100%';
+            setStatus('ok', ALL.length+' bất động sản');
+            applyFilter();
+            addLog(`✅ Đồng bộ thành công ${ALL.length} tin BĐS!`,'ok');
+            addLog('🔄 Giao diện đã được cập nhật.','ok');
+        } catch(e) {
+            fill.style.width='100%';
+            addLog('❌ Lỗi: '+e.message,'er');
+        }
+        btn.disabled=false; btn.textContent='⟳ Đồng bộ lại';
+    }
+    window.startSync = startSync;
+
+    /* ── Init ── */
+    fetchData();
+})();
+</script>
+</body>
+</html>
