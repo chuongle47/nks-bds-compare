@@ -1,4 +1,4 @@
-const WP_API = 'https://nksbds.page.gd/wp-json/nks/v1/properties';
+const WP_API = 'https://nksbds.page.gd/wp-json/nks/v1/properties?i=1';
 
 export default async function handler(req, res) {
   // ── CORS ─────────────────────────────────────────────────────
