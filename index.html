@@ -142,7 +142,7 @@
         /* ── COMPARE PANEL ── */
         .compare-panel {
             background: var(--white);
-            border: 1.5px solid var(--blue-mid);
+            border: 1.5px solid var(--border);
             border-radius: var(--r);
             overflow: hidden;
             margin-bottom: 28px;
@@ -154,49 +154,69 @@
 
         .compare-panel-head {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 16px 24px;
-            background: linear-gradient(135deg, var(--blue-lt), var(--blue-mid));
-            border-bottom: 1.5px solid var(--blue-mid);
+            padding: 14px 20px; border-bottom: 2px solid var(--border);
         }
         .compare-panel-title {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 19px; font-weight: 700; color: var(--blue-dk);
+            font-size: 15px; font-weight: 700; color: var(--text);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .compare-panel-title::before {
+            content: ''; display: inline-block;
+            width: 4px; height: 18px; border-radius: 2px;
+            background: var(--blue);
         }
         .btn-close-compare {
-            background: none; border: 1px solid var(--blue-mid);
+            background: none; border: 1px solid var(--border);
             font-size: 12px; font-weight: 600; color: var(--muted);
             cursor: pointer; padding: 5px 12px; border-radius: 6px;
             font-family: inherit; transition: all .18s;
         }
-        .btn-close-compare:hover { background: var(--white); color: var(--text); }
+        .btn-close-compare:hover { background: var(--bg); color: var(--text); }
 
         .compare-scroll { overflow-x: auto; }
 
-        .compare-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
-        .compare-table thead th {
-            padding: 13px 20px; text-align: left;
-            border-bottom: 2px solid var(--border);
-            background: var(--bg); color: var(--muted);
-            font-weight: 600; white-space: nowrap;
+        /* Product header row */
+        .compare-product-header { display: grid; border-bottom: 2px solid var(--border); }
+        .cph-label-cell {
+            background: var(--bg); border-right: 2px solid var(--border);
+            padding: 16px 14px; display: flex; align-items: center;
+            font-size: 11px; font-weight: 700; color: var(--muted);
+            text-transform: uppercase; letter-spacing: .5px; min-width: 120px;
         }
-        .compare-table thead th:first-child {
-            background: var(--blue-lt); color: var(--blue-dk);
-            min-width: 110px;
+        .cph-product-cell {
+            padding: 16px 14px; border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center;
+            gap: 8px; text-align: center; min-width: 160px;
         }
+        .cph-product-cell:last-child { border-right: none; }
+        .cph-img {
+            width: 88px; height: 88px; object-fit: cover;
+            border-radius: 8px; border: 1px solid var(--border);
+            background: var(--blue-lt);
+        }
+        .cph-name { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.4; }
+        .cph-price { font-size: 16px; font-weight: 700; color: var(--blue); font-family: 'Cormorant Garamond', serif; }
+        .cph-id { font-size: 11px; color: var(--muted); }
+
+        /* Specs rows */
+        .compare-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .compare-table tbody td {
-            padding: 11px 20px; border-bottom: 1px solid var(--border);
-            color: var(--text-2); vertical-align: top;
+            padding: 11px 14px; border-bottom: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            color: var(--text-2); vertical-align: middle;
         }
+        .compare-table tbody td:last-child { border-right: none; }
         .compare-table tbody tr:last-child td { border-bottom: none; }
-        .compare-table tbody tr:hover td { background: var(--bg); }
+        .compare-table tbody tr:nth-child(even) td { background: var(--bg); }
+        .compare-table tbody tr:hover td { background: var(--blue-lt); }
         .compare-table .row-label {
             font-weight: 700; color: var(--muted);
-            background: var(--blue-lt) !important;
-            border-right: 1.5px solid var(--blue-mid);
+            background: var(--bg) !important;
+            border-right: 2px solid var(--border) !important;
             font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+            min-width: 120px; white-space: nowrap;
         }
-        .compare-prop-name { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.4; }
-        .compare-table thead small { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+        .compare-table tbody tr:hover .row-label { background: var(--blue-lt) !important; }
 
         /* ── GRID ── */
         .properties-grid {
@@ -347,6 +367,24 @@
         }
         #nks-toast.show { opacity: 1; }
 
+        /* ── PAGINATION ── */
+        .pagination {
+            display: flex; align-items: center; justify-content: center;
+            gap: 6px; margin-top: 36px; flex-wrap: wrap;
+        }
+        .page-btn {
+            min-width: 36px; height: 36px; padding: 0 10px;
+            border: 1.5px solid var(--border); border-radius: 8px;
+            background: var(--white); color: var(--text-2);
+            font-size: 13px; font-weight: 600; font-family: inherit;
+            cursor: pointer; transition: all .18s;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .page-btn:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); background: var(--blue-lt); }
+        .page-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+        .page-btn:disabled { opacity: .35; cursor: default; }
+        .page-info { font-size: 13px; color: var(--muted); padding: 0 8px; }
+
         /* ── RESPONSIVE ── */
         @media (max-width: 600px) {
             .toolbar { gap: 8px; }
@@ -388,12 +426,12 @@
     <!-- COMPARE PANEL -->
     <div class="compare-panel" id="comparePanel">
         <div class="compare-panel-head">
-            <div class="compare-panel-title">📊 Bảng Đối Chiếu Bất Động Sản</div>
+            <div class="compare-panel-title">So sánh Bất Động Sản</div>
             <button class="btn-close-compare" onclick="closeCompare()">✕ Đóng</button>
         </div>
         <div class="compare-scroll">
+            <div class="compare-product-header" id="compareProductHeader"></div>
             <table class="compare-table">
-                <thead><tr id="compareHead"></tr></thead>
                 <tbody id="compareBody"></tbody>
             </table>
         </div>
@@ -421,6 +459,9 @@
 
     <!-- GRID -->
     <div class="properties-grid" id="propertiesGrid"></div>
+
+    <!-- PAGINATION -->
+    <div class="pagination" id="pagination"></div>
 </main>
 
 <!-- FLOAT BAR -->
@@ -433,9 +474,11 @@
 <div id="nks-toast"></div>
 
 <script>
-    let allData  = [];
-    let filtered = [];
-    let selected = [];
+    let allData   = [];
+    let filtered  = [];
+    let selected  = [];
+    let currentPage = 1;
+    const PAGE_SIZE = 12;
 
     const PROXY  = '/api/proxy';
     const NO_IMG = 'https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS';
@@ -507,7 +550,7 @@
                 + types.map(t => `<option value="${t}">${t}</option>`).join('');
 
             setStatus('ok', `${allData.length} bất động sản`);
-            applyFilter();
+            applyFilter(); // applyFilter đã gọi renderPagination bên trong
         } catch (err) {
             setStatus('error', 'Lỗi kết nối');
             document.getElementById('propertiesGrid').innerHTML =
@@ -539,10 +582,13 @@
         if (sort === 'area-asc')   filtered.sort((a,b) => (a.total_area||0) - (b.total_area||0));
         if (sort === 'area-desc')  filtered.sort((a,b) => (b.total_area||0) - (a.total_area||0));
 
+        currentPage = 1; // Reset về trang 1 khi filter thay đổi
+
         document.getElementById('resultCount').innerHTML =
             `Hiển thị <strong>${filtered.length}</strong> / ${allData.length} tin`;
 
         renderCards();
+        renderPagination();
     }
 
     // ── Render ───────────────────────────────────────────────
@@ -564,10 +610,15 @@
 
         if (!filtered.length) {
             grid.innerHTML = `<div class="state-empty"><div class="icon">🔍</div><p>Không tìm thấy kết quả phù hợp.</p></div>`;
+            document.getElementById('pagination').innerHTML = '';
             return;
         }
 
-        grid.innerHTML = filtered.map((item, i) => {
+        // Cắt data theo trang
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
+        grid.innerHTML = pageItems.map((item, i) => {
             const on    = selected.includes(String(item.id));
             const img   = imgUrl(item.featuring);
             const price = item.formatedPrice || item.price_label || 'Liên hệ';
@@ -595,6 +646,47 @@
                 </div>
             </div>`;
         }).join('');
+
+        // Scroll lên đầu grid khi chuyển trang
+        grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function renderPagination() {
+        const total = Math.ceil(filtered.length / PAGE_SIZE);
+        const pag   = document.getElementById('pagination');
+
+        if (total <= 1) { pag.innerHTML = ''; return; }
+
+        // Tạo dãy số trang với dấu "..."
+        function getPages(cur, tot) {
+            if (tot <= 7) return Array.from({length: tot}, (_, i) => i + 1);
+            const pages = [];
+            pages.push(1);
+            if (cur > 3) pages.push('...');
+            for (let i = Math.max(2, cur-1); i <= Math.min(tot-1, cur+1); i++) pages.push(i);
+            if (cur < tot - 2) pages.push('...');
+            pages.push(tot);
+            return pages;
+        }
+
+        const pages = getPages(currentPage, total);
+
+        pag.innerHTML = `
+            <button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹ Trước</button>
+            ${pages.map(p => p === '...'
+                ? `<span class="page-info">…</span>`
+                : `<button class="page-btn${p===currentPage?' active':''}" onclick="goPage(${p})">${p}</button>`
+            ).join('')}
+            <button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===total?'disabled':''}>Sau ›</button>
+        `;
+    }
+
+    function goPage(page) {
+        const total = Math.ceil(filtered.length / PAGE_SIZE);
+        if (page < 1 || page > total) return;
+        currentPage = page;
+        renderCards();
+        renderPagination();
     }
 
     // ── Select ───────────────────────────────────────────────
@@ -610,6 +702,7 @@
         }
         updateCompareUI();
         renderCards();
+        renderPagination();
     }
 
     function clearSelection() {
@@ -617,6 +710,7 @@
         closeCompare();
         updateCompareUI();
         renderCards();
+        renderPagination();
     }
 
     // ── Compare ──────────────────────────────────────────────
@@ -634,8 +728,27 @@
 
     function buildCompareTable() {
         const items  = allData.filter(d => selected.includes(String(d.id)));
+        const cols   = items.length;
+
+        // ── Product header: label cell + 1 cell per product ──
+        const headerStyle = `grid-template-columns: 120px repeat(${cols}, 1fr)`;
+        document.getElementById('compareProductHeader').style = headerStyle;
+        document.getElementById('compareProductHeader').innerHTML =
+            `<div class="cph-label-cell">Sản phẩm</div>`
+            + items.map(i => {
+                const img   = imgUrl(i.featuring);
+                const price = i.formatedPrice || i.price_label || 'Liên hệ';
+                return `<div class="cph-product-cell">
+                    <img class="cph-img" src="${img}" alt="${i.title||''}"
+                         onerror="this.onerror=null;this.src='${NO_IMG}'">
+                    <div class="cph-name">${i.title||'—'}</div>
+                    <div class="cph-price">${price}</div>
+                    <div class="cph-id">#${i.id}</div>
+                </div>`;
+            }).join('');
+
+        // ── Specs rows ──
         const fields = [
-            { l: 'Giá',        k: 'formatedPrice' },
             { l: 'Diện tích',  k: 'total_area',   fmt: v => v ? v + ' m²' : '—' },
             { l: 'Loại BĐS',   k: 'rstype' },
             { l: 'Phòng ngủ',  k: 'bed' },
@@ -644,10 +757,6 @@
             { l: 'Địa chỉ',    k: 'address' },
             { l: 'Điện thoại', k: 'phone' },
         ];
-
-        document.getElementById('compareHead').innerHTML =
-            '<th class="row-label">Tiêu chí</th>'
-            + items.map(i => `<th><div class="compare-prop-name">${i.title||'—'}</div><small>#${i.id}</small></th>`).join('');
 
         document.getElementById('compareBody').innerHTML =
             fields.map(f => `<tr>
