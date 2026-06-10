@@ -221,9 +221,12 @@
         /* ── GRID ── */
         .properties-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(min(235px,100%), 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 22px;
         }
+        @media (max-width: 1024px) { .properties-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 720px)  { .properties-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px)  { .properties-grid { grid-template-columns: 1fr; } }
 
         /* ── CARD ── */
         .card {
