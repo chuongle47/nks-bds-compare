@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -421,18 +420,7 @@
     </div>
 
     <!-- GRID -->
-    <div class="properties-grid" id="propertiesGrid">
-        <!-- skeleton -->
-        ${Array(8).fill(0).map(() => `
-        <div class="card skeleton">
-            <div class="sk-img"></div>
-            <div style="padding:15px 16px">
-                <div class="sk-line w80"></div>
-                <div class="sk-line w60"></div>
-                <div class="sk-btn"></div>
-            </div>
-        </div>`).join('')}
-    </div>
+    <div class="properties-grid" id="propertiesGrid"></div>
 </main>
 
 <!-- FLOAT BAR -->
@@ -445,12 +433,12 @@
 <div id="nks-toast"></div>
 
 <script>
-    let allData     = [];
-    let filtered    = [];
-    let selected    = [];
-    const PROXY     = '/api/proxy';
-    
-    const NO_IMG    = 'https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS';
+    let allData  = [];
+    let filtered = [];
+    let selected = [];
+
+    const PROXY  = '/api/proxy';
+    const NO_IMG = 'https://placehold.co/400x260/e8f4fd/0077bb?text=NKS+BDS';
 
     // ── Helpers ──────────────────────────────────────────────
 
@@ -491,19 +479,20 @@
         renderSkeleton();
 
         try {
-            const res  = await fetch(PROXY, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
+            // FIX: dùng GET thay vì POST — đúng với REST API
+            const res = await fetch(PROXY);
             if (!res.ok) throw new Error('HTTP ' + res.status);
             const json = await res.json();
 
+            // Kiểm tra nếu proxy trả về lỗi dạng object
+            if (json && json.error) throw new Error(json.error);
+
             // Chuẩn hóa cấu trúc
             let items = [];
-            if (Array.isArray(json) && json[0])         items = json;
-            else if (Array.isArray(json.data))           items = json.data;
-            else if (Array.isArray(json.items))          items = json.items;
-            else if (Array.isArray(json.List))           items = json.List;
+            if (Array.isArray(json) && json.length)  items = json;
+            else if (Array.isArray(json.data))        items = json.data;
+            else if (Array.isArray(json.items))       items = json.items;
+            else if (Array.isArray(json.List))        items = json.List;
 
             // Map field featureimg → featuring
             allData = items.map(i => ({
@@ -520,9 +509,13 @@
             setStatus('ok', `${allData.length} bất động sản`);
             applyFilter();
         } catch (err) {
-            setStatus('error', 'Lỗi: ' + err.message);
+            setStatus('error', 'Lỗi kết nối');
             document.getElementById('propertiesGrid').innerHTML =
-                `<div class="state-empty"><div class="icon">⚠️</div><p style="color:#ef4444">${err.message}</p><p style="margin-top:8px;font-size:13px">Kiểm tra endpoint <code>/api/proxy</code></p></div>`;
+                `<div class="state-empty">
+                    <div class="icon">⚠️</div>
+                    <p style="color:#ef4444;font-weight:600">${err.message}</p>
+                    <p style="margin-top:8px;font-size:13px">Kiểm tra endpoint <code>/api/proxy</code></p>
+                </div>`;
         } finally {
             document.getElementById('syncBtn').disabled = false;
         }
@@ -575,8 +568,8 @@
         }
 
         grid.innerHTML = filtered.map((item, i) => {
-            const on  = selected.includes(String(item.id));
-            const img = item.imgProxy || imgUrl(item.featuring);
+            const on    = selected.includes(String(item.id));
+            const img   = imgUrl(item.featuring);
             const price = item.formatedPrice || item.price_label || 'Liên hệ';
             const area  = item.total_area ? item.total_area + ' m²' : null;
 
