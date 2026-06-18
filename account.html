@@ -328,6 +328,108 @@
             .form-grid { grid-template-columns: 1fr; }
             .cccd-upload-row { grid-template-columns: 1fr; }
         }
+
+        /* ── MODAL (avatar editor) ── */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 2000;
+            background: rgba(13,27,42,.55);
+            display: none; align-items: center; justify-content: center;
+            padding: 18px;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: var(--white); border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            width: min(420px, 100%);
+            padding: 22px;
+        }
+        .modal-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .modal-box .modal-sub { font-size: 12.5px; color: var(--muted); margin-bottom: 16px; }
+
+        .crop-stage {
+            width: 100%; height: 260px;
+            border-radius: 10px;
+            background: #0d1b2a repeating-conic-gradient(#16263a 0% 25%, #0d1b2a 0% 50%) 50% / 16px 16px;
+            overflow: hidden;
+            position: relative;
+            cursor: grab;
+            margin-bottom: 14px;
+            touch-action: none;
+        }
+        .crop-stage:active { cursor: grabbing; }
+        .crop-stage img {
+            position: absolute;
+            left: 50%; top: 50%;
+            transform-origin: center center;
+            max-width: none; max-height: none;
+            user-select: none; pointer-events: none;
+        }
+        .crop-frame {
+            position: absolute; inset: 0;
+            display: grid; place-items: center;
+            pointer-events: none;
+        }
+        .crop-frame::before {
+            content: '';
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,.9);
+            box-shadow: 0 0 0 2000px rgba(13,27,42,.45);
+        }
+        .crop-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+        .crop-controls label { text-transform: none; font-weight: 500; color: var(--text-2); white-space: nowrap; }
+        .crop-controls input[type=range] { flex: 1; accent-color: var(--blue); }
+        .crop-rotate-btn {
+            width: 34px; height: 34px; border-radius: 8px;
+            border: 1.5px solid var(--border); background: var(--white);
+            cursor: pointer; font-size: 14px; display: grid; place-items: center;
+            flex-shrink: 0;
+        }
+        .crop-rotate-btn:hover { border-color: var(--blue); color: var(--blue); }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+        /* ── PASSWORD GENERATOR ── */
+        .pwgen-toggle {
+            display: inline-flex; align-items: center; gap: 7px;
+            background: none; border: none; cursor: pointer;
+            font-family: inherit; font-size: 12.5px; font-weight: 600;
+            color: var(--blue-dk); padding: 0; margin: -6px 0 4px;
+        }
+        .pwgen-toggle:hover { color: var(--blue); }
+        .pwgen-panel {
+            display: none;
+            background: var(--blue-lt);
+            border: 1.5px solid var(--blue-mid);
+            border-radius: 10px;
+            padding: 16px;
+            margin: 6px 0 4px;
+        }
+        .pwgen-panel.show { display: block; }
+        .pwgen-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .pwgen-row label { text-transform: none; font-weight: 600; color: var(--text-2); white-space: nowrap; font-size: 12.5px; }
+        .pwgen-row input[type=range] { flex: 1; accent-color: var(--blue); }
+        .pwgen-len-val { font-weight: 700; color: var(--blue-dk); font-size: 13px; min-width: 26px; text-align: right; }
+        .pwgen-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; margin-bottom: 14px; }
+        .pwgen-check { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-2); cursor: pointer; }
+        .pwgen-check input { accent-color: var(--blue); width: 15px; height: 15px; cursor: pointer; }
+        .pwgen-actions { display: flex; gap: 10px; }
+        .pwgen-result {
+            margin-top: 12px; padding: 10px 12px;
+            background: var(--white); border: 1.5px dashed var(--blue-mid);
+            border-radius: 8px; font-family: 'DM Sans', monospace;
+            font-size: 14px; font-weight: 600; letter-spacing: .5px;
+            color: var(--text); display: none; word-break: break-all;
+        }
+        .pwgen-result.show { display: block; }
+
+        .confirm-save-row {
+            display: flex; align-items: flex-start; gap: 9px;
+            margin-top: 16px; padding: 12px 14px;
+            background: var(--bg); border: 1.5px solid var(--border);
+            border-radius: 8px; font-size: 12.5px; color: var(--text-2);
+        }
+        .confirm-save-row input { margin-top: 2px; accent-color: var(--blue); width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; }
+        .confirm-save-row label { text-transform: none; font-weight: 500; color: var(--text-2); cursor: pointer; }
     </style>
 </head>
 <body>
@@ -377,9 +479,6 @@
             <button class="nav-item" onclick="showPanel('cccd')" id="nav-cccd">
                 <span class="nav-icon">🪪</span> Cập nhật CCCD
             </button>
-            <button class="nav-item" onclick="showPanel('geo')" id="nav-geo">
-                <span class="nav-icon">🗺️</span> Địa giới hành chính
-            </button>
         </nav>
     </aside>
 
@@ -414,9 +513,21 @@
                             <label>Email</label>
                             <input type="email" id="infoEmail" placeholder="email@example.com">
                         </div>
+                        <div class="form-group">
+                            <label>Tỉnh / Thành phố</label>
+                            <select id="infoProvince" onchange="onProvinceChange()">
+                                <option value="">— Chọn tỉnh / thành phố —</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Quận / Huyện / Phường / Xã</label>
+                            <select id="infoAdministrative">
+                                <option value="">— Chọn tỉnh / thành phố trước —</option>
+                            </select>
+                        </div>
                         <div class="form-group full">
-                            <label>Địa chỉ</label>
-                            <input type="text" id="infoAddress" placeholder="123 Lê Lợi, Q.1, TP.HCM">
+                            <label>Địa chỉ chi tiết</label>
+                            <input type="text" id="infoAddress" placeholder="Số nhà, tên đường">
                         </div>
                     </div>
                     <div class="form-actions">
@@ -475,6 +586,34 @@
                             <input type="password" id="confirmPass" placeholder="••••••••" autocomplete="new-password">
                         </div>
                     </div>
+
+                    <button type="button" class="pwgen-toggle" onclick="togglePwgen()">
+                        🎲 Tạo mật khẩu ngẫu nhiên
+                    </button>
+                    <div class="pwgen-panel" id="pwgenPanel">
+                        <div class="pwgen-row">
+                            <label>Số ký tự</label>
+                            <input type="range" id="pwgenLength" min="6" max="32" value="12" oninput="document.getElementById('pwgenLengthVal').textContent = this.value">
+                            <span class="pwgen-len-val" id="pwgenLengthVal">12</span>
+                        </div>
+                        <div class="pwgen-checks">
+                            <label class="pwgen-check"><input type="checkbox" id="pwgenUpper" checked> Ký tự hoa (A-Z)</label>
+                            <label class="pwgen-check"><input type="checkbox" id="pwgenLower" checked> Ký tự thường (a-z)</label>
+                            <label class="pwgen-check"><input type="checkbox" id="pwgenDigit" checked> Ký tự số (0-9)</label>
+                            <label class="pwgen-check"><input type="checkbox" id="pwgenSpecial"> Ký tự đặc biệt (!@#$)</label>
+                        </div>
+                        <div class="pwgen-actions">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="generatePassword()">⚡ Tạo mật khẩu</button>
+                            <button type="button" class="btn btn-ghost btn-sm" onclick="useGeneratedPassword()" id="useGeneratedBtn" disabled>✅ Dùng mật khẩu này</button>
+                        </div>
+                        <div class="pwgen-result" id="pwgenResult"></div>
+                    </div>
+
+                    <div class="confirm-save-row">
+                        <input type="checkbox" id="confirmPassSaved">
+                        <label for="confirmPassSaved">Tôi đã lưu lại mật khẩu mới này ở nơi an toàn trước khi xác nhận đổi mật khẩu.</label>
+                    </div>
+
                     <div class="form-actions">
                         <button class="btn btn-primary" id="savePassBtn" onclick="savePassword()">
                             <div class="spinner"></div>
@@ -534,45 +673,32 @@
             </div>
         </div>
 
-        <!-- ── PANEL: ĐỊA GIỚI HÀNH CHÍNH ── -->
-        <div class="panel" id="panel-geo">
-            <div class="card">
-                <div class="card-head">
-                    <div class="card-title">Tra cứu Tỉnh / Thành phố</div>
-                </div>
-                <div class="card-body">
-                    <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
-                        <div class="form-group" style="margin:0">
-                            <label>Quốc gia ID</label>
-                            <input type="number" id="countryId" value="237" style="width:100px">
-                        </div>
-                        <button class="btn btn-primary" onclick="loadProvinces()">📋 Lấy danh sách</button>
-                    </div>
-                    <div id="provincesResult"></div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-head">
-                    <div class="card-title">Tra cứu Hành chính</div>
-                </div>
-                <div class="card-body">
-                    <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
-                        <div class="form-group" style="margin:0">
-                            <label>Province ID</label>
-                            <input type="number" id="provinceId" style="width:110px" placeholder="VD: 50">
-                        </div>
-                        <button class="btn btn-primary" onclick="loadAdministratives()">🏘️ Lấy hành chính</button>
-                    </div>
-                    <div id="adminsResult"></div>
-                </div>
-            </div>
-        </div>
-
     </main>
 </div>
 
 <div id="toast"></div>
+
+<!-- AVATAR EDIT MODAL -->
+<div class="modal-overlay" id="avatarModal">
+    <div class="modal-box">
+        <h3>🖼️ Tùy chỉnh ảnh đại diện</h3>
+        <p class="modal-sub">Kéo để di chuyển, dùng thanh trượt để thu phóng, xoay ảnh nếu cần.</p>
+        <div class="crop-stage" id="cropStage">
+            <img id="cropImg" src="" alt="">
+            <div class="crop-frame"></div>
+        </div>
+        <div class="crop-controls">
+            <label>🔍 Thu phóng</label>
+            <input type="range" id="cropZoom" min="100" max="300" value="100" oninput="applyCropTransform()">
+            <button type="button" class="crop-rotate-btn" onclick="rotateCrop(-90)" title="Xoay trái">⟲</button>
+            <button type="button" class="crop-rotate-btn" onclick="rotateCrop(90)" title="Xoay phải">⟳</button>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="closeAvatarModal()">Hủy</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="applyAvatarCrop()">✅ Áp dụng</button>
+        </div>
+    </div>
+</div>
 
 <script>
     const AUTH_KEY  = 'nks-auth-session';
@@ -632,7 +758,6 @@
         info:     'Thông tin cá nhân',
         password: 'Đổi mật khẩu',
         cccd:     'Cập nhật CCCD',
-        geo:      'Địa giới hành chính',
     };
 
     function showPanel(id) {
@@ -682,6 +807,13 @@
             document.getElementById('infoEmail').value   = u.email   || '';
             document.getElementById('infoPhone').value   = u.phone   || '';
             document.getElementById('infoAddress').value = u.address || '';
+
+            // Tỉnh/Thành + Quận/Huyện (chờ load xong danh sách tỉnh trước khi set giá trị)
+            const provinceId = u.province || u.province_id || '';
+            if (provinceId) {
+                await loadProvincesIntoSelect(provinceId);
+                await loadAdministrativesIntoSelect(provinceId, u.administrative || u.administrative_id || '');
+            }
 
             // Sidebar
             const name  = u.name || u.fullname || getSession()?.username || '—';
@@ -738,10 +870,12 @@
         setLoading('saveInfoBtn', true);
         try {
             const data = await apiCall('update_info', {
-                name:    document.getElementById('infoName').value.trim(),
-                email:   document.getElementById('infoEmail').value.trim(),
-                phone:   document.getElementById('infoPhone').value.trim(),
-                address: document.getElementById('infoAddress').value.trim(),
+                name:           document.getElementById('infoName').value.trim(),
+                email:          document.getElementById('infoEmail').value.trim(),
+                phone:          document.getElementById('infoPhone').value.trim(),
+                address:        document.getElementById('infoAddress').value.trim(),
+                province:       document.getElementById('infoProvince').value,
+                administrative: document.getElementById('infoAdministrative').value,
             });
             if (data.status === 'error' || data.error) throw new Error(data.message || data.error || 'Lỗi không xác định');
             showMsg('infoMsg', '✅ Cập nhật thông tin thành công!', 'success');
@@ -756,33 +890,149 @@
 
     // ── Avatar ───────────────────────────────────────────────────────────
 
-    let _avatarBase64 = '';
+    let _avatarBase64  = '';   // ảnh đã qua chỉnh sửa, sẵn sàng để lưu
+    let _cropRawSrc    = '';   // ảnh gốc đưa vào modal chỉnh sửa
+    let _cropRotation  = 0;
+    let _cropScale     = 1;
+    let _cropOffsetX   = 0;
+    let _cropOffsetY   = 0;
+    const CROP_OUTPUT_SIZE = 320;
+
+    function openAvatarModal(src) {
+        _cropRawSrc   = src;
+        _cropRotation = 0;
+        _cropScale    = 1;
+        _cropOffsetX  = 0;
+        _cropOffsetY  = 0;
+        document.getElementById('cropZoom').value = 100;
+
+        const img = document.getElementById('cropImg');
+        img.onload = () => {
+            // Đặt ảnh phủ đầy khung crop tròn 180px ban đầu
+            const stage = document.getElementById('cropStage');
+            const minSide = Math.min(img.naturalWidth, img.naturalHeight);
+            _cropScale = 200 / minSide; // hệ số quy đổi cơ bản để ảnh lấp đầy khung
+            applyCropTransform();
+        };
+        img.src = src;
+        document.getElementById('avatarModal').classList.add('show');
+        bindCropDrag();
+    }
+
+    function closeAvatarModal() {
+        document.getElementById('avatarModal').classList.remove('show');
+    }
+
+    function rotateCrop(deg) {
+        _cropRotation = (_cropRotation + deg + 360) % 360;
+        applyCropTransform();
+    }
+
+    function applyCropTransform() {
+        const zoomPct = parseInt(document.getElementById('cropZoom').value, 10) / 100;
+        const img = document.getElementById('cropImg');
+        const finalScale = _cropScale * zoomPct;
+        img.style.width  = (img.naturalWidth  * finalScale) + 'px';
+        img.style.height = (img.naturalHeight * finalScale) + 'px';
+        img.style.transform = `translate(-50%, -50%) translate(${_cropOffsetX}px, ${_cropOffsetY}px) rotate(${_cropRotation}deg)`;
+    }
+
+    function bindCropDrag() {
+        const stage = document.getElementById('cropStage');
+        if (stage._bound) return;
+        stage._bound = true;
+        let dragging = false, startX = 0, startY = 0, baseX = 0, baseY = 0;
+
+        const start = (x, y) => { dragging = true; startX = x; startY = y; baseX = _cropOffsetX; baseY = _cropOffsetY; };
+        const move  = (x, y) => {
+            if (!dragging) return;
+            _cropOffsetX = baseX + (x - startX);
+            _cropOffsetY = baseY + (y - startY);
+            applyCropTransform();
+        };
+        const end = () => { dragging = false; };
+
+        stage.addEventListener('mousedown', e => start(e.clientX, e.clientY));
+        window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+        window.addEventListener('mouseup', end);
+        stage.addEventListener('touchstart', e => { const t = e.touches[0]; start(t.clientX, t.clientY); }, { passive: true });
+        stage.addEventListener('touchmove',  e => { const t = e.touches[0]; move(t.clientX, t.clientY);  }, { passive: true });
+        stage.addEventListener('touchend', end);
+    }
+
+    function applyAvatarCrop() {
+        const img = document.getElementById('cropImg');
+        const zoomPct = parseInt(document.getElementById('cropZoom').value, 10) / 100;
+        const finalScale = _cropScale * zoomPct;
+
+        // Khung crop tròn cố định 180px nằm giữa stage 100% x 260px
+        const stage = document.getElementById('cropStage');
+        const frameSize  = 180;
+        const stageRect  = { w: stage.clientWidth, h: stage.clientHeight };
+        const centerX = stageRect.w / 2;
+        const centerY = stageRect.h / 2;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = CROP_OUTPUT_SIZE;
+        canvas.height = CROP_OUTPUT_SIZE;
+        const ctx = canvas.getContext('2d');
+        const outScale = CROP_OUTPUT_SIZE / frameSize;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(CROP_OUTPUT_SIZE / 2, CROP_OUTPUT_SIZE / 2, CROP_OUTPUT_SIZE / 2, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.translate(CROP_OUTPUT_SIZE / 2 + _cropOffsetX * outScale, CROP_OUTPUT_SIZE / 2 + _cropOffsetY * outScale);
+        ctx.rotate(_cropRotation * Math.PI / 180);
+        ctx.drawImage(
+            img,
+            -(img.naturalWidth  * finalScale * outScale) / 2,
+            -(img.naturalHeight * finalScale * outScale) / 2,
+            img.naturalWidth  * finalScale * outScale,
+            img.naturalHeight * finalScale * outScale
+        );
+        ctx.restore();
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        _avatarBase64 = dataUrl.split(',')[1];
+
+        const thumb = document.getElementById('avatarPreviewThumb');
+        thumb.style.cssText = `background-image:url(${dataUrl});background-size:cover;background-position:center;font-size:0`;
+        thumb.textContent = '';
+        document.getElementById('saveAvatarBtn').disabled = false;
+
+        // Cập nhật avatar ở sidebar luôn để người dùng thấy trước
+        const sidebarA = document.getElementById('sidebarAvatar');
+        const sidebarI = document.getElementById('sidebarInitial');
+        sidebarA.src = dataUrl;
+        sidebarA.style.display = 'block';
+        sidebarI.style.display = 'none';
+
+        closeAvatarModal();
+        toast('✅ Đã áp dụng — nhấn "Cập nhật ảnh" để lưu lại.');
+    }
 
     function previewAvatar(e) {
         const file = e.target.files[0];
         if (!file) return;
         if (file.size > 2 * 1024 * 1024) { toast('⚠️ Ảnh quá lớn (tối đa 2MB)'); return; }
         const reader = new FileReader();
-        reader.onload = ev => {
-            const src = ev.target.result;
-            _avatarBase64 = src.split(',')[1];
-            const thumb = document.getElementById('avatarPreviewThumb');
-            thumb.style.cssText = `background-image:url(${src});background-size:cover;background-position:center;font-size:0`;
-            thumb.textContent = '';
-            document.getElementById('saveAvatarBtn').disabled = false;
-        };
+        reader.onload = ev => openAvatarModal(ev.target.result);
         reader.readAsDataURL(file);
     }
 
-    // Also handle click from sidebar avatar ring
-    document.getElementById('avatarUploadInput').addEventListener('change', async (e) => {
+    // Click avatar ở sidebar → mở luôn khung chỉnh sửa (chọn → edit → lưu)
+    document.getElementById('avatarUploadInput').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
         if (file.size > 2 * 1024 * 1024) { toast('⚠️ Ảnh quá lớn (tối đa 2MB)'); return; }
-        // Mirror to the main avatar input
-        _avatarBase64 = await fileToBase64(file);
-        document.getElementById('saveAvatarBtn').disabled = false;
-        await saveAvatar();
+        const reader = new FileReader();
+        reader.onload = ev => {
+            openAvatarModal(ev.target.result);
+            // Chuyển sang tab "Thông tin cá nhân" để người dùng thấy nút Lưu sau khi chỉnh sửa
+            showPanel('info');
+        };
+        reader.readAsDataURL(file);
     });
 
     async function saveAvatar() {
@@ -795,6 +1045,7 @@
             showMsg('avatarMsg', '✅ Cập nhật ảnh đại diện thành công!', 'success');
             toast('✅ Ảnh đại diện đã được cập nhật!');
             _avatarBase64 = '';
+            document.getElementById('saveAvatarBtn').disabled = true;
         } catch(e) {
             showMsg('avatarMsg', '❌ ' + e.message, 'error');
         } finally {
@@ -813,6 +1064,10 @@
         if (!old || !np || !cp) { showMsg('passMsg', '⚠️ Vui lòng điền đầy đủ thông tin.', 'error'); return; }
         if (np !== cp) { showMsg('passMsg', '⚠️ Mật khẩu mới không khớp nhau.', 'error'); return; }
         if (np.length < 6) { showMsg('passMsg', '⚠️ Mật khẩu mới tối thiểu 6 ký tự.', 'error'); return; }
+        if (!document.getElementById('confirmPassSaved').checked) {
+            showMsg('passMsg', '⚠️ Vui lòng xác nhận bạn đã lưu lại mật khẩu mới trước khi tiếp tục.', 'error');
+            return;
+        }
 
         setLoading('savePassBtn', true);
         try {
@@ -823,12 +1078,65 @@
             document.getElementById('oldPass').value    = '';
             document.getElementById('newPass').value    = '';
             document.getElementById('confirmPass').value= '';
+            document.getElementById('confirmPassSaved').checked = false;
+            document.getElementById('pwgenResult').classList.remove('show');
+            document.getElementById('pwgenPanel').classList.remove('show');
+            document.getElementById('useGeneratedBtn').disabled = true;
         } catch(e) {
             showMsg('passMsg', '❌ ' + e.message, 'error');
         } finally {
             setLoading('savePassBtn', false);
         }
     }
+
+    // ── Tạo mật khẩu ngẫu nhiên ──────────────────────────────────────────
+
+    let _generatedPassword = '';
+
+    function togglePwgen() {
+        document.getElementById('pwgenPanel').classList.toggle('show');
+    }
+
+    function generatePassword() {
+        const length  = parseInt(document.getElementById('pwgenLength').value, 10);
+        const useUp   = document.getElementById('pwgenUpper').checked;
+        const useLow  = document.getElementById('pwgenLower').checked;
+        const useNum  = document.getElementById('pwgenDigit').checked;
+        const useSpec = document.getElementById('pwgenSpecial').checked;
+
+        const sets = [];
+        if (useUp)   sets.push('ABCDEFGHJKLMNPQRSTUVWXYZ');
+        if (useLow)  sets.push('abcdefghijkmnpqrstuvwxyz');
+        if (useNum)  sets.push('23456789');
+        if (useSpec) sets.push('!@#$%^&*-_+=');
+
+        if (!sets.length) { toast('⚠️ Chọn ít nhất 1 loại ký tự.'); return; }
+
+        const allChars = sets.join('');
+        let pwd = '';
+        // Đảm bảo có ít nhất 1 ký tự từ mỗi loại đã chọn
+        sets.forEach(set => { pwd += set[Math.floor(Math.random() * set.length)]; });
+        while (pwd.length < length) {
+            pwd += allChars[Math.floor(Math.random() * allChars.length)];
+        }
+        // Xáo trộn kết quả
+        pwd = pwd.slice(0, length).split('').sort(() => Math.random() - 0.5).join('');
+
+        _generatedPassword = pwd;
+        const resultBox = document.getElementById('pwgenResult');
+        resultBox.textContent = pwd;
+        resultBox.classList.add('show');
+        document.getElementById('useGeneratedBtn').disabled = false;
+    }
+
+    function useGeneratedPassword() {
+        if (!_generatedPassword) return;
+        document.getElementById('newPass').value     = _generatedPassword;
+        document.getElementById('confirmPass').value = _generatedPassword;
+        document.getElementById('confirmPassSaved').checked = false;
+        toast('✅ Đã điền mật khẩu mới — hãy lưu lại trước khi xác nhận!');
+    }
+
 
     // ── CCCD ─────────────────────────────────────────────────────────────
 
@@ -872,45 +1180,42 @@
         }
     }
 
-    // ── Geo ──────────────────────────────────────────────────────────────
+    // ── Tỉnh / Thành & Quận / Huyện (selects) ───────────────────────────────
 
-    function renderGeoTable(items, containerId) {
-        const box = document.getElementById(containerId);
-        if (!items?.length) { box.innerHTML = '<p style="color:var(--muted);padding:12px 0;font-size:13px">Không có dữ liệu.</p>'; return; }
-        box.innerHTML = `<div style="overflow-x:auto;margin-top:4px">
-            <table class="geo-table">
-                <thead><tr><th>ID</th><th>Tên</th></tr></thead>
-                <tbody>${items.map(i => `<tr>
-                    <td><code style="font-size:12px;background:var(--bg);padding:2px 6px;border-radius:4px">${i.id ?? i.value ?? '—'}</code></td>
-                    <td>${i.name ?? i.label ?? '—'}</td>
-                </tr>`).join('')}</tbody>
-            </table>
-        </div>`;
-    }
-
-    async function loadProvinces() {
-        const cid = document.getElementById('countryId').value || 237;
-        document.getElementById('provincesResult').innerHTML = '<p style="color:var(--muted);padding:12px 0;font-size:13px">⏳ Đang tải...</p>';
+    async function loadProvincesIntoSelect(selectedId) {
+        const sel = document.getElementById('infoProvince');
         try {
-            const data = await apiCall('get_provinces', { country_id: cid });
+            const data  = await apiCall('get_provinces', { country_id: 237, slcBox: 1 });
             const items = Array.isArray(data) ? data : (data.data ?? data.items ?? []);
-            renderGeoTable(items, 'provincesResult');
-        } catch(e) {
-            document.getElementById('provincesResult').innerHTML = `<p style="color:var(--red);font-size:13px">❌ ${e.message}</p>`;
+            sel.innerHTML = '<option value="">— Chọn tỉnh / thành phố —</option>' +
+                items.map(i => `<option value="${i.id ?? i.value}">${i.name ?? i.label}</option>`).join('');
+            if (selectedId) sel.value = selectedId;
+        } catch (e) {
+            sel.innerHTML = '<option value="">Không tải được danh sách</option>';
         }
     }
 
-    async function loadAdministratives() {
-        const pid = document.getElementById('provinceId').value;
-        if (!pid) { toast('⚠️ Nhập Province ID trước.'); return; }
-        document.getElementById('adminsResult').innerHTML = '<p style="color:var(--muted);padding:12px 0;font-size:13px">⏳ Đang tải...</p>';
-        try {
-            const data = await apiCall('get_administratives', { province_id: pid });
-            const items = Array.isArray(data) ? data : (data.data ?? data.items ?? []);
-            renderGeoTable(items, 'adminsResult');
-        } catch(e) {
-            document.getElementById('adminsResult').innerHTML = `<p style="color:var(--red);font-size:13px">❌ ${e.message}</p>`;
+    async function loadAdministrativesIntoSelect(provinceId, selectedId) {
+        const sel = document.getElementById('infoAdministrative');
+        if (!provinceId) {
+            sel.innerHTML = '<option value="">— Chọn tỉnh / thành phố trước —</option>';
+            return;
         }
+        sel.innerHTML = '<option value="">⏳ Đang tải...</option>';
+        try {
+            const data  = await apiCall('get_administratives', { province_id: provinceId, slcBox: 1 });
+            const items = Array.isArray(data) ? data : (data.data ?? data.items ?? []);
+            sel.innerHTML = '<option value="">— Chọn quận / huyện / phường / xã —</option>' +
+                items.map(i => `<option value="${i.id ?? i.value}">${i.name ?? i.label}</option>`).join('');
+            if (selectedId) sel.value = selectedId;
+        } catch (e) {
+            sel.innerHTML = '<option value="">Không tải được danh sách</option>';
+        }
+    }
+
+    function onProvinceChange() {
+        const pid = document.getElementById('infoProvince').value;
+        loadAdministrativesIntoSelect(pid);
     }
 
     // ── Init ─────────────────────────────────────────────────────────────
@@ -923,6 +1228,7 @@
             document.getElementById('sidebarEmail').textContent = s.email || '';
             updateAvatarUI(s.avatar || '', s.name);
         }
+        loadProvincesIntoSelect();
         loadUserInfo();
     }
 </script>
