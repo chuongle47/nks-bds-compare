@@ -51,8 +51,12 @@ export default async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  // Xác định route dựa theo URL path
+  const url      = req.url || '';
+  const isAccount = url.includes('nks-account');
+
   // ── Route: POST /api/nks-account  (Account & Online API relay) ───────
-  if (req.method === 'POST') {
+  if (req.method === 'POST' && isAccount) {
     let body = req.body;
     // Vercel parse JSON body tự động nếu Content-Type: application/json
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
