@@ -395,3 +395,18 @@
     .nks-cpanel-head { padding: 14px 16px; }
     .nks-ctable thead th, .nks-ctable tbody td { padding: 10px 14px; }
 }
+
+/* ── User Pill (header) ── */
+.user-pill {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px 5px 6px !important;
+    border-radius: 999px !important;
+    text-decoration: none;
+}
+.user-pill:hover {
+    background: var(--blue-lt) !important;
+    border-color: var(--blue) !important;
+    color: var(--blue) !important;
+}

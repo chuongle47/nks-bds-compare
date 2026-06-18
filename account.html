@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NKS — Tài khoản của tôi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --blue:     #0077bb;
+            --blue-dk:  #005a8e;
+            --blue-lt:  #e8f4fd;
+            --blue-mid: #cce4f6;
+            --gold:     #c9993a;
+            --text:     #0d1b2a;
+            --text-2:   #2d4157;
+            --muted:    #6b8094;
+            --border:   #dde6ee;
+            --bg:       #f5f8fb;
+            --white:    #ffffff;
+            --green:    #16a34a;
+            --red:      #dc2626;
+            --shadow:   0 2px 12px rgba(0,119,187,.08);
+            --shadow-lg:0 12px 48px rgba(0,0,0,.10);
+            --r:        12px;
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── HEADER ── */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(255,255,255,.95);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+        .header-inner {
+            max-width: 1100px; margin: auto;
+            padding: 0 clamp(16px,4vw,40px);
+            height: 62px;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+        .logo-mark {
+            width:34px; height:34px; border-radius:8px;
+            background:var(--blue);
+            display:grid; place-items:center;
+            font-family:'Cormorant Garamond',serif;
+            font-size:17px; font-weight:700; color:#fff;
+        }
+        .logo-name { font-size:14px; font-weight:600; color:var(--text); }
+        .logo-sub  { font-size:11px; color:var(--muted); font-weight:400; }
+        .header-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
+        .btn {
+            display:inline-flex; align-items:center; gap:6px;
+            padding:7px 16px; border-radius:8px;
+            font-family:inherit; font-size:13px; font-weight:600;
+            cursor:pointer; border:none; transition:all .18s;
+            text-decoration:none; white-space:nowrap;
+        }
+        .btn-ghost  { background:var(--white); color:var(--text-2); border:1px solid var(--border); }
+        .btn-ghost:hover { background:var(--bg); border-color:var(--blue); color:var(--blue); }
+        .btn-danger { background:#fff; color:#b45309; border:1px solid #fcd34d; }
+        .btn-danger:hover { background:#fffbeb; }
+        .btn-primary { background:var(--blue); color:#fff; }
+        .btn-primary:hover { background:var(--blue-dk); transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,119,187,.3); }
+        .btn-sm { padding:6px 14px; font-size:12px; }
+
+        /* ── LAYOUT ── */
+        .page-wrap {
+            max-width: 1100px; margin: auto;
+            padding: clamp(20px,4vw,40px) clamp(16px,4vw,40px);
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar { position: sticky; top: 82px; }
+
+        .user-card {
+            background: var(--white);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r);
+            padding: 28px 20px 24px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            margin-bottom: 14px;
+        }
+        .user-avatar-ring {
+            width: 88px; height: 88px;
+            border-radius: 50%;
+            border: 3px solid var(--blue-mid);
+            padding: 3px;
+            margin: 0 auto 14px;
+            position: relative;
+            cursor: pointer;
+        }
+        .user-avatar-ring:hover .avatar-overlay { opacity: 1; }
+        .user-avatar-ring img,
+        .user-avatar-ring .avatar-initials {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+        }
+        .avatar-initials {
+            background: var(--blue);
+            color: #fff;
+            font-size: 28px; font-weight: 700;
+            display: grid; place-items: center;
+        }
+        .avatar-overlay {
+            position: absolute; inset: 3px;
+            border-radius: 50%;
+            background: rgba(0,0,0,.42);
+            display: grid; place-items: center;
+            opacity: 0; transition: opacity .2s;
+            color: #fff; font-size: 12px; font-weight: 600;
+            cursor: pointer;
+        }
+        #avatarUploadInput { display: none; }
+
+        .user-name  { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+        .user-email { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+        .user-phone { font-size: 13px; color: var(--muted); }
+
+        .sidebar-nav {
+            background: var(--white);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 11px;
+            padding: 13px 18px;
+            font-size: 13px; font-weight: 500; color: var(--text-2);
+            cursor: pointer; border: none; background: none;
+            width: 100%; text-align: left;
+            border-bottom: 1px solid var(--border);
+            transition: all .16s; font-family: inherit;
+        }
+        .nav-item:last-child { border-bottom: none; }
+        .nav-item:hover { background: var(--blue-lt); color: var(--blue); }
+        .nav-item.active { background: var(--blue-lt); color: var(--blue); font-weight: 600; border-left: 3px solid var(--blue); }
+        .nav-icon { font-size: 16px; flex-shrink: 0; }
+
+        /* ── CONTENT PANELS ── */
+        .panel { display: none; }
+        .panel.active { display: block; animation: fadeIn .25s ease; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+        .card {
+            background: var(--white);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .card-head {
+            padding: 18px 24px 16px;
+            border-bottom: 1.5px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .card-title {
+            font-size: 15px; font-weight: 700; color: var(--text);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .card-title::before {
+            content:''; display:inline-block;
+            width:3px; height:18px; border-radius:2px;
+            background: var(--blue);
+        }
+        .card-body { padding: 22px 24px; }
+
+        /* ── FORM ── */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group.full { grid-column: 1/-1; }
+
+        label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+        input[type=text], input[type=email], input[type=tel],
+        input[type=password], input[type=date], textarea, select {
+            padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit; font-size: 13px; color: var(--text);
+            background: var(--bg); outline: none;
+            transition: all .18s;
+            width: 100%;
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--blue);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(0,119,187,.10);
+        }
+        textarea { resize: vertical; min-height: 80px; }
+
+        .form-actions { display: flex; align-items: center; gap: 12px; margin-top: 22px; }
+
+        /* ── MESSAGES ── */
+        .msg {
+            padding: 11px 16px;
+            border-radius: 8px;
+            font-size: 13px; font-weight: 500;
+            display: none; margin-top: 14px;
+        }
+        .msg.show { display: flex; align-items: center; gap: 8px; }
+        .msg.success { background: #f0fdf4; color: var(--green); border: 1px solid #bbf7d0; }
+        .msg.error   { background: #fef2f2; color: var(--red);   border: 1px solid #fecaca; }
+        .msg.info    { background: var(--blue-lt); color: var(--blue-dk); border: 1px solid var(--blue-mid); }
+
+        /* ── LOADING SKELETON ── */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f4f8 25%, #e2eaf2 50%, #f0f4f8 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 6px; height: 14px;
+        }
+        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+        /* ── AVATAR PREVIEW ── */
+        .avatar-preview-wrap {
+            display: flex; align-items: center; gap: 18px;
+            padding: 14px; background: var(--bg);
+            border: 1.5px dashed var(--border); border-radius: 10px;
+            margin-bottom: 16px;
+        }
+        .avatar-preview-img {
+            width: 70px; height: 70px;
+            border-radius: 50%; object-fit: cover;
+            border: 2px solid var(--border);
+            background: var(--blue-lt);
+            display: grid; place-items: center;
+            font-size: 24px; font-weight: 700; color: var(--blue);
+        }
+        .file-input-label {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 8px 16px; border-radius: 8px;
+            border: 1.5px dashed var(--blue-mid);
+            background: var(--blue-lt); color: var(--blue-dk);
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: all .18s; font-family: inherit;
+        }
+        .file-input-label:hover { border-color: var(--blue); background: #d6edf9; }
+
+        /* ── CCCD row ── */
+        .cccd-upload-row {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+            margin-bottom: 18px;
+        }
+        .cccd-slot {
+            border: 1.5px dashed var(--border); border-radius: 10px;
+            padding: 14px; text-align: center; cursor: pointer;
+            transition: all .18s; position: relative; overflow: hidden;
+        }
+        .cccd-slot:hover { border-color: var(--blue); background: var(--blue-lt); }
+        .cccd-slot img { width:100%; height:100px; object-fit:cover; border-radius:6px; display:none; }
+        .cccd-slot .slot-placeholder { font-size: 13px; color: var(--muted); padding: 20px 0; }
+        .cccd-slot .slot-placeholder span { font-size: 26px; display: block; margin-bottom: 6px; }
+
+        /* ── GEO TABLE ── */
+        .geo-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:14px; }
+        .geo-table th { padding:8px 12px; background:var(--bg); color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.4px; border-bottom:2px solid var(--border); text-align:left; }
+        .geo-table td { padding:9px 12px; border-bottom:1px solid var(--border); color:var(--text-2); }
+        .geo-table tr:last-child td { border-bottom: none; }
+        .geo-table tr:hover td { background: var(--bg); }
+
+        /* ── BADGE ── */
+        .badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 10px; border-radius: 999px;
+            font-size: 11px; font-weight: 600;
+        }
+        .badge-green { background:#f0fdf4; color:var(--green); border:1px solid #bbf7d0; }
+        .badge-blue  { background:var(--blue-lt); color:var(--blue-dk); border:1px solid var(--blue-mid); }
+        .badge-gray  { background:var(--bg); color:var(--muted); border:1px solid var(--border); }
+
+        /* ── SECTION HEADER ── */
+        .section-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 22px;
+        }
+        .section-title { font-size: 22px; font-weight: 700; color: var(--text); }
+        .section-sub   { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+        /* ── SPINNER ── */
+        .spinner {
+            width: 16px; height: 16px; border-radius: 50%;
+            border: 2.5px solid rgba(255,255,255,.35);
+            border-top-color: #fff;
+            animation: spin .7s linear infinite;
+            display: none;
+        }
+        @keyframes spin { to{ transform:rotate(360deg) } }
+        .loading .spinner { display: inline-block; }
+        .loading .btn-label { display: none; }
+
+        /* ── TOAST ── */
+        #toast {
+            position: fixed; bottom: 28px; left: 50%;
+            transform: translateX(-50%) translateY(60px);
+            background: #0d1b2a; color: #fff;
+            padding: 11px 22px; border-radius: 999px;
+            font-size: 13px; font-weight: 500;
+            box-shadow: 0 8px 32px rgba(0,0,0,.2);
+            transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+            z-index: 9999; white-space: nowrap;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .page-wrap { grid-template-columns: 1fr; gap: 20px; }
+            .sidebar { position: static; }
+            .form-grid { grid-template-columns: 1fr; }
+            .cccd-upload-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="header-inner">
+        <a class="logo" href="index.html">
+            <div class="logo-mark">N</div>
+            <div>
+                <div class="logo-name">NKS BĐS</div>
+                <div class="logo-sub">Hệ thống So Sánh</div>
+            </div>
+        </a>
+        <div class="header-right">
+            <a class="btn btn-ghost btn-sm" href="index.html">
+                ← Về Dashboard
+            </a>
+            <button class="btn btn-danger btn-sm" onclick="logout()">Đăng xuất</button>
+        </div>
+    </div>
+</header>
+
+<div class="page-wrap">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="user-card" id="userCard">
+            <div class="user-avatar-ring" onclick="document.getElementById('avatarUploadInput').click()" title="Nhấn để thay ảnh đại diện">
+                <div class="avatar-initials" id="sidebarInitial">?</div>
+                <img id="sidebarAvatar" src="" alt="" style="display:none">
+                <div class="avatar-overlay">📷<br>Thay ảnh</div>
+            </div>
+            <input type="file" id="avatarUploadInput" accept="image/*">
+            <div class="user-name"  id="sidebarName">Đang tải...</div>
+            <div class="user-email" id="sidebarEmail"></div>
+            <div class="user-phone" id="sidebarPhone"></div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-item active" onclick="showPanel('info')" id="nav-info">
+                <span class="nav-icon">👤</span> Thông tin cá nhân
+            </button>
+            <button class="nav-item" onclick="showPanel('password')" id="nav-password">
+                <span class="nav-icon">🔒</span> Đổi mật khẩu
+            </button>
+            <button class="nav-item" onclick="showPanel('cccd')" id="nav-cccd">
+                <span class="nav-icon">🪪</span> Cập nhật CCCD
+            </button>
+            <button class="nav-item" onclick="showPanel('geo')" id="nav-geo">
+                <span class="nav-icon">🗺️</span> Địa giới hành chính
+            </button>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        <div class="section-header">
+            <div>
+                <div class="section-title">Tài khoản của tôi</div>
+                <div class="section-sub" id="pageSubtitle">Thông tin cá nhân</div>
+            </div>
+            <span class="badge badge-blue" id="tokenBadge">🔑 Đã xác thực</span>
+        </div>
+
+        <!-- ── PANEL: THÔNG TIN CÁ NHÂN ── -->
+        <div class="panel active" id="panel-info">
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-title">Thông tin cơ bản</div>
+                    <button class="btn btn-ghost btn-sm" onclick="refreshUserInfo()">🔄 Làm mới</button>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid" id="infoForm">
+                        <div class="form-group">
+                            <label>Họ và tên</label>
+                            <input type="text" id="infoName" placeholder="Nguyễn Văn A">
+                        </div>
+                        <div class="form-group">
+                            <label>Số điện thoại</label>
+                            <input type="tel" id="infoPhone" placeholder="0901 234 567">
+                        </div>
+                        <div class="form-group full">
+                            <label>Email</label>
+                            <input type="email" id="infoEmail" placeholder="email@example.com">
+                        </div>
+                        <div class="form-group full">
+                            <label>Địa chỉ</label>
+                            <input type="text" id="infoAddress" placeholder="123 Lê Lợi, Q.1, TP.HCM">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" id="saveInfoBtn" onclick="saveInfo()">
+                            <div class="spinner"></div>
+                            <span class="btn-label">💾 Lưu thay đổi</span>
+                        </button>
+                    </div>
+                    <div class="msg" id="infoMsg"></div>
+                </div>
+            </div>
+
+            <!-- Ảnh đại diện -->
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-title">Ảnh đại diện</div>
+                </div>
+                <div class="card-body">
+                    <div class="avatar-preview-wrap">
+                        <div class="avatar-preview-img" id="avatarPreviewThumb">?</div>
+                        <div>
+                            <label class="file-input-label" for="avatarFileInput">
+                                📁 Chọn ảnh mới
+                            </label>
+                            <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="previewAvatar(event)">
+                            <div style="font-size:12px;color:var(--muted);margin-top:6px">JPG, PNG, GIF — tối đa 2MB</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="saveAvatarBtn" onclick="saveAvatar()" disabled>
+                        <div class="spinner"></div>
+                        <span class="btn-label">🖼️ Cập nhật ảnh</span>
+                    </button>
+                    <div class="msg" id="avatarMsg"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── PANEL: ĐỔI MẬT KHẨU ── -->
+        <div class="panel" id="panel-password">
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-title">Đổi mật khẩu</div>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label>Mật khẩu hiện tại</label>
+                            <input type="password" id="oldPass" placeholder="••••••••" autocomplete="current-password">
+                        </div>
+                        <div class="form-group">
+                            <label>Mật khẩu mới</label>
+                            <input type="password" id="newPass" placeholder="••••••••" autocomplete="new-password">
+                        </div>
+                        <div class="form-group">
+                            <label>Xác nhận mật khẩu mới</label>
+                            <input type="password" id="confirmPass" placeholder="••••••••" autocomplete="new-password">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" id="savePassBtn" onclick="savePassword()">
+                            <div class="spinner"></div>
+                            <span class="btn-label">🔒 Đổi mật khẩu</span>
+                        </button>
+                    </div>
+                    <div class="msg" id="passMsg"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── PANEL: CCCD ── -->
+        <div class="panel" id="panel-cccd">
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-title">Cập nhật CCCD / CMND</div>
+                </div>
+                <div class="card-body">
+                    <div class="cccd-upload-row">
+                        <div class="cccd-slot" onclick="document.getElementById('cccdFrontInput').click()">
+                            <input type="file" id="cccdFrontInput" accept="image/*" style="display:none" onchange="previewCccd(event,'cccdFrontPreview')">
+                            <img id="cccdFrontPreview" alt="Mặt trước">
+                            <div class="slot-placeholder" id="cccdFrontPlaceholder">
+                                <span>🪪</span>Mặt trước<br><small style="color:var(--muted);font-size:11px">Nhấn để chọn ảnh</small>
+                            </div>
+                        </div>
+                        <div class="cccd-slot" onclick="document.getElementById('cccdBackInput').click()">
+                            <input type="file" id="cccdBackInput" accept="image/*" style="display:none" onchange="previewCccd(event,'cccdBackPreview')">
+                            <img id="cccdBackPreview" alt="Mặt sau">
+                            <div class="slot-placeholder" id="cccdBackPlaceholder">
+                                <span>🪪</span>Mặt sau<br><small style="color:var(--muted);font-size:11px">Nhấn để chọn ảnh</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Số CCCD / CMND</label>
+                            <input type="text" id="cccdNumber" placeholder="079xxxxxxxxx" maxlength="12">
+                        </div>
+                        <div class="form-group">
+                            <label>Ngày cấp</label>
+                            <input type="text" id="cccdDate" placeholder="dd/mm/yyyy">
+                        </div>
+                        <div class="form-group full">
+                            <label>Nơi cấp</label>
+                            <input type="text" id="cccdPlace" placeholder="Cục cảnh sát QLHC về TTXH">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" id="saveCccdBtn" onclick="saveCccd()">
+                            <div class="spinner"></div>
+                            <span class="btn-label">🪪 Gửi cập nhật CCCD</span>
+                        </button>
+                    </div>
+                    <div class="msg" id="cccdMsg"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── PANEL: ĐỊA GIỚI HÀNH CHÍNH ── -->
+        <div class="panel" id="panel-geo">
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-title">Tra cứu Tỉnh / Thành phố</div>
+                </div>
+                <div class="card-body">
+                    <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
+                        <div class="form-group" style="margin:0">
+                            <label>Quốc gia ID</label>
+                            <input type="number" id="countryId" value="237" style="width:100px">
+                        </div>
+                        <button class="btn btn-primary" onclick="loadProvinces()">📋 Lấy danh sách</button>
+                    </div>
+                    <div id="provincesResult"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-title">Tra cứu Hành chính</div>
+                </div>
+                <div class="card-body">
+                    <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
+                        <div class="form-group" style="margin:0">
+                            <label>Province ID</label>
+                            <input type="number" id="provinceId" style="width:110px" placeholder="VD: 50">
+                        </div>
+                        <button class="btn btn-primary" onclick="loadAdministratives()">🏘️ Lấy hành chính</button>
+                    </div>
+                    <div id="adminsResult"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+    const AUTH_KEY  = 'nks-auth-session';
+    const API       = '/api/nks-account';
+
+    // ── Session ──────────────────────────────────────────────────────────
+
+    function getSession() {
+        try { return JSON.parse(sessionStorage.getItem(AUTH_KEY)) || null; }
+        catch { return null; }
+    }
+    function saveSession(s) { sessionStorage.setItem(AUTH_KEY, JSON.stringify(s)); }
+
+    function requireAuth() {
+        if (getSession()?.access_token) return true;
+        window.location.replace('login.html');
+        return false;
+    }
+
+    function logout() {
+        sessionStorage.removeItem(AUTH_KEY);
+        window.location.replace('login.html');
+    }
+
+    // ── Toast ────────────────────────────────────────────────────────────
+
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(t._t);
+        t._t = setTimeout(() => t.classList.remove('show'), 2600);
+    }
+
+    // ── UI helpers ───────────────────────────────────────────────────────
+
+    function showMsg(id, msg, type = 'success') {
+        const el = document.getElementById(id);
+        el.className = `msg show ${type}`;
+        el.innerHTML = msg;
+    }
+    function hideMsg(id) {
+        const el = document.getElementById(id);
+        el.className = 'msg';
+        el.innerHTML = '';
+    }
+
+    function setLoading(btnId, loading) {
+        const btn = document.getElementById(btnId);
+        btn.classList.toggle('loading', loading);
+        btn.disabled = loading;
+    }
+
+    // ── Panel switching ──────────────────────────────────────────────────
+
+    const panelTitles = {
+        info:     'Thông tin cá nhân',
+        password: 'Đổi mật khẩu',
+        cccd:     'Cập nhật CCCD',
+        geo:      'Địa giới hành chính',
+    };
+
+    function showPanel(id) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('panel-' + id).classList.add('active');
+        document.getElementById('nav-' + id).classList.add('active');
+        document.getElementById('pageSubtitle').textContent = panelTitles[id] || '';
+    }
+
+    // ── API call ─────────────────────────────────────────────────────────
+
+    async function apiCall(action, extra = {}) {
+        const session = getSession();
+        const payload = { action, ...extra };
+        if (session?.access_token && !payload.access_token) {
+            payload.access_token = session.access_token;
+        }
+        const res  = await fetch(API, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(payload),
+        });
+        return res.json();
+    }
+
+    // ── File → Base64 ────────────────────────────────────────────────────
+
+    function fileToBase64(file) {
+        return new Promise((res, rej) => {
+            const r = new FileReader();
+            r.onload  = e => res(e.target.result.split(',')[1]);
+            r.onerror = rej;
+            r.readAsDataURL(file);
+        });
+    }
+
+    // ── Load & render user info ──────────────────────────────────────────
+
+    async function loadUserInfo() {
+        try {
+            const data = await apiCall('get_user');
+            const u    = data.data ?? data.user ?? data;
+
+            // Fill form
+            document.getElementById('infoName').value    = u.name    || u.fullname || '';
+            document.getElementById('infoEmail').value   = u.email   || '';
+            document.getElementById('infoPhone').value   = u.phone   || '';
+            document.getElementById('infoAddress').value = u.address || '';
+
+            // Sidebar
+            const name  = u.name || u.fullname || getSession()?.username || '—';
+            const email = u.email || '';
+            const phone = u.phone || '';
+
+            document.getElementById('sidebarName').textContent  = name;
+            document.getElementById('sidebarEmail').textContent = email;
+            document.getElementById('sidebarPhone').textContent = phone;
+            document.getElementById('userDisplayName') && (document.getElementById('userDisplayName').textContent = name);
+
+            // Avatar
+            updateAvatarUI(u.avatar || getSession()?.avatar || '', name);
+
+            // Update session
+            const s = getSession();
+            saveSession({ ...s, name, email, phone, avatar: u.avatar || s.avatar });
+
+        } catch(e) {
+            console.error('loadUserInfo:', e);
+        }
+    }
+
+    function updateAvatarUI(avatarUrl, name) {
+        const initial  = (name || '?').charAt(0).toUpperCase();
+        const sidebarI = document.getElementById('sidebarInitial');
+        const sidebarA = document.getElementById('sidebarAvatar');
+        const thumbEl  = document.getElementById('avatarPreviewThumb');
+
+        if (avatarUrl) {
+            sidebarI.style.display = 'none';
+            sidebarA.src = avatarUrl;
+            sidebarA.style.display = 'block';
+            thumbEl.style.cssText  = `background-image:url(${avatarUrl});background-size:cover;background-position:center;font-size:0`;
+            thumbEl.textContent = '';
+        } else {
+            sidebarI.textContent   = initial;
+            sidebarI.style.display = 'grid';
+            sidebarA.style.display = 'none';
+            thumbEl.textContent = initial;
+        }
+    }
+
+    async function refreshUserInfo() {
+        toast('🔄 Đang làm mới thông tin...');
+        await loadUserInfo();
+        toast('✅ Đã cập nhật!');
+    }
+
+    // ── Save info ────────────────────────────────────────────────────────
+
+    async function saveInfo() {
+        hideMsg('infoMsg');
+        setLoading('saveInfoBtn', true);
+        try {
+            const data = await apiCall('update_info', {
+                name:    document.getElementById('infoName').value.trim(),
+                email:   document.getElementById('infoEmail').value.trim(),
+                phone:   document.getElementById('infoPhone').value.trim(),
+                address: document.getElementById('infoAddress').value.trim(),
+            });
+            if (data.status === 'error' || data.error) throw new Error(data.message || data.error || 'Lỗi không xác định');
+            showMsg('infoMsg', '✅ Cập nhật thông tin thành công!', 'success');
+            toast('✅ Lưu thành công!');
+            await loadUserInfo();
+        } catch(e) {
+            showMsg('infoMsg', '❌ ' + e.message, 'error');
+        } finally {
+            setLoading('saveInfoBtn', false);
+        }
+    }
+
+    // ── Avatar ───────────────────────────────────────────────────────────
+
+    let _avatarBase64 = '';
+
+    function previewAvatar(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) { toast('⚠️ Ảnh quá lớn (tối đa 2MB)'); return; }
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const src = ev.target.result;
+            _avatarBase64 = src.split(',')[1];
+            const thumb = document.getElementById('avatarPreviewThumb');
+            thumb.style.cssText = `background-image:url(${src});background-size:cover;background-position:center;font-size:0`;
+            thumb.textContent = '';
+            document.getElementById('saveAvatarBtn').disabled = false;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Also handle click from sidebar avatar ring
+    document.getElementById('avatarUploadInput').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) { toast('⚠️ Ảnh quá lớn (tối đa 2MB)'); return; }
+        // Mirror to the main avatar input
+        _avatarBase64 = await fileToBase64(file);
+        document.getElementById('saveAvatarBtn').disabled = false;
+        await saveAvatar();
+    });
+
+    async function saveAvatar() {
+        if (!_avatarBase64) return;
+        hideMsg('avatarMsg');
+        setLoading('saveAvatarBtn', true);
+        try {
+            const data = await apiCall('update_avatar', { avatar: _avatarBase64 });
+            if (data.status === 'error' || data.error) throw new Error(data.message || data.error || 'Lỗi không xác định');
+            showMsg('avatarMsg', '✅ Cập nhật ảnh đại diện thành công!', 'success');
+            toast('✅ Ảnh đại diện đã được cập nhật!');
+            _avatarBase64 = '';
+        } catch(e) {
+            showMsg('avatarMsg', '❌ ' + e.message, 'error');
+        } finally {
+            setLoading('saveAvatarBtn', false);
+        }
+    }
+
+    // ── Password ─────────────────────────────────────────────────────────
+
+    async function savePassword() {
+        hideMsg('passMsg');
+        const old = document.getElementById('oldPass').value;
+        const np  = document.getElementById('newPass').value;
+        const cp  = document.getElementById('confirmPass').value;
+
+        if (!old || !np || !cp) { showMsg('passMsg', '⚠️ Vui lòng điền đầy đủ thông tin.', 'error'); return; }
+        if (np !== cp) { showMsg('passMsg', '⚠️ Mật khẩu mới không khớp nhau.', 'error'); return; }
+        if (np.length < 6) { showMsg('passMsg', '⚠️ Mật khẩu mới tối thiểu 6 ký tự.', 'error'); return; }
+
+        setLoading('savePassBtn', true);
+        try {
+            const data = await apiCall('update_password', { old_password: old, password: np });
+            if (data.status === 'error' || data.error) throw new Error(data.message || data.error || 'Lỗi không xác định');
+            showMsg('passMsg', '✅ Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
+            toast('✅ Đã đổi mật khẩu!');
+            document.getElementById('oldPass').value    = '';
+            document.getElementById('newPass').value    = '';
+            document.getElementById('confirmPass').value= '';
+        } catch(e) {
+            showMsg('passMsg', '❌ ' + e.message, 'error');
+        } finally {
+            setLoading('savePassBtn', false);
+        }
+    }
+
+    // ── CCCD ─────────────────────────────────────────────────────────────
+
+    function previewCccd(e, previewId) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const img = document.getElementById(previewId);
+            img.src = ev.target.result;
+            img.style.display = 'block';
+            const slotId = previewId.replace('Preview', 'Placeholder');
+            const ph = document.getElementById(slotId);
+            if (ph) ph.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function saveCccd() {
+        hideMsg('cccdMsg');
+        const frontFile = document.getElementById('cccdFrontInput').files[0];
+        const backFile  = document.getElementById('cccdBackInput').files[0];
+        const number    = document.getElementById('cccdNumber').value.trim();
+        const date      = document.getElementById('cccdDate').value.trim();
+        const place     = document.getElementById('cccdPlace').value.trim();
+
+        if (!frontFile || !backFile) { showMsg('cccdMsg', '⚠️ Vui lòng chọn cả hai mặt CCCD.', 'error'); return; }
+        if (!number || !date || !place) { showMsg('cccdMsg', '⚠️ Vui lòng điền đầy đủ thông tin CCCD.', 'error'); return; }
+
+        setLoading('saveCccdBtn', true);
+        try {
+            const [frontB64, backB64] = await Promise.all([fileToBase64(frontFile), fileToBase64(backFile)]);
+            const data = await apiCall('update_cccd', { front: frontB64, back: backB64, number, date, place });
+            if (data.status === 'error' || data.error) throw new Error(data.message || data.error || 'Lỗi không xác định');
+            showMsg('cccdMsg', '✅ Cập nhật CCCD thành công! Đang chờ xét duyệt.', 'success');
+            toast('✅ CCCD đã được gửi!');
+        } catch(e) {
+            showMsg('cccdMsg', '❌ ' + e.message, 'error');
+        } finally {
+            setLoading('saveCccdBtn', false);
+        }
+    }
+
+    // ── Geo ──────────────────────────────────────────────────────────────
+
+    function renderGeoTable(items, containerId) {
+        const box = document.getElementById(containerId);
+        if (!items?.length) { box.innerHTML = '<p style="color:var(--muted);padding:12px 0;font-size:13px">Không có dữ liệu.</p>'; return; }
+        box.innerHTML = `<div style="overflow-x:auto;margin-top:4px">
+            <table class="geo-table">
+                <thead><tr><th>ID</th><th>Tên</th></tr></thead>
+                <tbody>${items.map(i => `<tr>
+                    <td><code style="font-size:12px;background:var(--bg);padding:2px 6px;border-radius:4px">${i.id ?? i.value ?? '—'}</code></td>
+                    <td>${i.name ?? i.label ?? '—'}</td>
+                </tr>`).join('')}</tbody>
+            </table>
+        </div>`;
+    }
+
+    async function loadProvinces() {
+        const cid = document.getElementById('countryId').value || 237;
+        document.getElementById('provincesResult').innerHTML = '<p style="color:var(--muted);padding:12px 0;font-size:13px">⏳ Đang tải...</p>';
+        try {
+            const data = await apiCall('get_provinces', { country_id: cid });
+            const items = Array.isArray(data) ? data : (data.data ?? data.items ?? []);
+            renderGeoTable(items, 'provincesResult');
+        } catch(e) {
+            document.getElementById('provincesResult').innerHTML = `<p style="color:var(--red);font-size:13px">❌ ${e.message}</p>`;
+        }
+    }
+
+    async function loadAdministratives() {
+        const pid = document.getElementById('provinceId').value;
+        if (!pid) { toast('⚠️ Nhập Province ID trước.'); return; }
+        document.getElementById('adminsResult').innerHTML = '<p style="color:var(--muted);padding:12px 0;font-size:13px">⏳ Đang tải...</p>';
+        try {
+            const data = await apiCall('get_administratives', { province_id: pid });
+            const items = Array.isArray(data) ? data : (data.data ?? data.items ?? []);
+            renderGeoTable(items, 'adminsResult');
+        } catch(e) {
+            document.getElementById('adminsResult').innerHTML = `<p style="color:var(--red);font-size:13px">❌ ${e.message}</p>`;
+        }
+    }
+
+    // ── Init ─────────────────────────────────────────────────────────────
+
+    if (requireAuth()) {
+        const s = getSession();
+        // Show cached info instantly while loading fresh
+        if (s?.name) {
+            document.getElementById('sidebarName').textContent  = s.name;
+            document.getElementById('sidebarEmail').textContent = s.email || '';
+            updateAvatarUI(s.avatar || '', s.name);
+        }
+        loadUserInfo();
+    }
+</script>
+</body>
+</html>

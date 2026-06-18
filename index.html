@@ -94,6 +94,8 @@
         .btn-ghost:hover { background: var(--bg); border-color: var(--blue); color: var(--blue); }
         .btn-compare { background: var(--blue); color: #fff; }
         .btn-compare:hover { background: var(--blue-dk); }
+        .btn-danger { background: #fff; color: #b45309; border: 1px solid #fcd34d; }
+        .btn-danger:hover { background: #fffbeb; border-color: #f59e0b; color: #92400e; }
 
         .compare-badge {
             background: var(--gold); color: #fff;
@@ -279,6 +281,7 @@
         .card-title {
             font-size: 14px; font-weight: 600;
             color: var(--text); line-height: 1.45;
+            line-clamp: 2;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
             overflow: hidden; min-height: 41px; margin-bottom: 7px;
         }
@@ -418,6 +421,17 @@
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                 Đồng bộ
             </button>
+            <!-- User pill → account page -->
+            <a class="btn btn-ghost user-pill" href="account.html" id="userPill" title="Quản lý tài khoản" style="gap:8px;padding:6px 14px 6px 8px;text-decoration:none">
+                <span class="user-avatar-wrap" id="userAvatarWrap">
+                    <img id="userAvatarImg" src="" alt="" style="display:none;width:26px;height:26px;border-radius:50%;object-fit:cover;border:2px solid var(--border)">
+                    <span id="userAvatarInitial" style="width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;flex-shrink:0">?</span>
+                </span>
+                <span id="userDisplayName" style="font-size:13px;font-weight:600;color:var(--text-2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Tài khoản</span>
+            </a>
+            <button class="btn btn-danger" onclick="logout()" id="logoutBtn">
+                Đăng xuất
+            </button>
             <button class="btn btn-compare" id="compareBtn" style="display:none" onclick="scrollToCompare()">
                 📊 So sánh <span class="compare-badge" id="compareCount">0</span>
             </button>
@@ -477,6 +491,9 @@
 <div id="nks-toast"></div>
 
 <script>
+    const AUTH_KEY = 'nks-auth-session';
+    const USER_KEY  = 'nks-login-username';
+
     let allData   = [];
     let filtered  = [];
     let selected  = [];
@@ -508,6 +525,31 @@
         t._t = setTimeout(() => t.classList.remove('show'), 2500);
     }
 
+    function getAuthSession() {
+        try {
+            const raw = sessionStorage.getItem(AUTH_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    function isAuthenticated() {
+        const session = getAuthSession();
+        return !!(session && session.username);
+    }
+
+    function requireAuth() {
+        if (isAuthenticated()) return true;
+        window.location.replace('login.html');
+        return false;
+    }
+
+    function logout() {
+        sessionStorage.removeItem(AUTH_KEY);
+        window.location.replace('login.html');
+    }
+
     function updateCompareUI() {
         const n   = selected.length;
         const btn = document.getElementById('compareBtn');
@@ -520,6 +562,7 @@
     // ── Fetch ────────────────────────────────────────────────
 
     async function fetchProperties() {
+        if (!requireAuth()) return;
         setStatus('loading', 'Đang đồng bộ...');
         document.getElementById('syncBtn').disabled = true;
         renderSkeleton();
@@ -773,7 +816,25 @@
     }
 
     // ── Init ─────────────────────────────────────────────────
-    fetchProperties();
+    function renderUserPill() {
+        const s = getAuthSession();
+        if (!s) return;
+        const name = s.name || s.username || 'Tài khoản';
+        document.getElementById('userDisplayName').textContent = name;
+        if (s.avatar) {
+            const img = document.getElementById('userAvatarImg');
+            img.src = s.avatar;
+            img.style.display = 'block';
+            document.getElementById('userAvatarInitial').style.display = 'none';
+        } else {
+            document.getElementById('userAvatarInitial').textContent = name.charAt(0).toUpperCase();
+        }
+    }
+
+    if (requireAuth()) {
+        renderUserPill();
+        fetchProperties();
+    }
 </script>
 </body>
 </html>
