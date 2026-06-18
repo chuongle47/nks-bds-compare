@@ -246,6 +246,26 @@
             box-shadow: 0 0 0 4px rgba(0,119,187,.12);
         }
 
+        /* Input rows with leading icon (username / password) */
+        .input-row {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex: 1 1 auto;
+        }
+
+        .input-row .input { padding-left: 44px; }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            display: inline-flex;
+            color: var(--blue);
+            pointer-events: none;
+        }
+
+        .input-icon svg { width: 19px; height: 19px; }
+
         .password-row {
             display: flex;
             gap: 10px;
@@ -254,14 +274,102 @@
 
         .toggle-btn {
             height: 48px;
+            width: 48px;
             border-radius: 14px;
             border: 1.5px solid var(--border);
             background: #fff;
-            padding: 0 14px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             font: inherit;
             cursor: pointer;
             color: var(--muted);
             flex: 0 0 auto;
+        }
+
+        .toggle-btn svg { width: 20px; height: 20px; }
+
+        /* Returning-user greeting row */
+        .user-row {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            margin-bottom: 16px;
+            border-radius: 16px;
+            background: var(--blue-lt);
+            border: 1px solid rgba(0,119,187,.14);
+        }
+
+        .card.returning .user-row { display: flex; }
+        .card.returning #usernameField { display: none; }
+
+        .user-row-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #fff;
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            color: var(--blue);
+            box-shadow: 0 4px 12px rgba(0,36,64,.08);
+        }
+
+        .user-row-avatar svg { width: 24px; height: 24px; }
+
+        .user-row-text {
+            flex: 1 1 auto;
+            min-width: 0;
+            line-height: 1.4;
+        }
+
+        .user-row-text .greeting {
+            display: block;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .user-row-text strong {
+            display: block;
+            font-size: 15px;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .swap-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(0,119,187,.25);
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--blue-dk);
+            cursor: pointer;
+            flex: 0 0 auto;
+            transition: transform .18s, background .18s;
+        }
+
+        .swap-btn:hover { transform: rotate(180deg); background: var(--blue-lt); }
+        .swap-btn svg { width: 18px; height: 18px; }
+
+        .signup-row {
+            margin-top: 18px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .signup-row a {
+            color: var(--blue-dk);
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 2px;
         }
 
         .options {
@@ -341,9 +449,7 @@
         @media (max-width: 540px) {
             .hero, .login-panel { padding: 18px; }
             .card { padding: 22px; border-radius: 22px; }
-            .password-row { flex-direction: column; align-items: stretch; }
-            .toggle-btn { width: 100%; }
-            .options { flex-direction: column; align-items: flex-start; }
+            .options { flex-direction: column; align-items: flex-start; gap: 10px; }
         }
     </style>
 </head>
@@ -388,19 +494,60 @@
                 <h2>Chào mừng trở lại</h2>
                 <p class="sub">Đăng nhập để tiếp tục vào hệ thống NKS Bất Động Sản.</p>
 
-                <div class="session-box" id="savedUserBox"></div>
                 <div class="error" id="errorBox"></div>
 
-                <div class="field">
+                <!-- Hiển thị khi đã có tên đăng nhập được nhớ (đăng nhập lần thứ 2+) -->
+                <div class="user-row" id="returningUserRow">
+                    <div class="user-row-avatar" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.8"/>
+                            <path d="M4.5 19.2c1.4-3.2 4.2-4.9 7.5-4.9s6.1 1.7 7.5 4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="user-row-text">
+                        <span class="greeting" id="greetingText">Chào buổi sáng</span>
+                        <strong id="greetingName"></strong>
+                    </div>
+                    <button type="button" class="swap-btn" id="switchAccountBtn" aria-label="Đăng nhập bằng tài khoản khác" title="Đăng nhập bằng tài khoản khác">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 7h10l-2.5-2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M17 17H7l2.5 2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Hiển thị khi đăng nhập lần đầu tiên (chưa có tên đăng nhập được nhớ) -->
+                <div class="field" id="usernameField">
                     <label for="username">Tên đăng nhập</label>
-                    <input class="input" id="username" name="username" type="text" placeholder="Nhập tên đăng nhập">
+                    <div class="input-row">
+                        <span class="input-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.8"/>
+                                <path d="M4.5 19.2c1.4-3.2 4.2-4.9 7.5-4.9s6.1 1.7 7.5 4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                        <input class="input" id="username" name="username" type="text" placeholder="Nhập tên đăng nhập">
+                    </div>
                 </div>
 
                 <div class="field">
                     <label for="password">Mật khẩu</label>
                     <div class="password-row">
-                        <input class="input" id="password" name="password" type="password" placeholder="Nhập mật khẩu">
-                        <button class="toggle-btn" type="button" id="togglePassword">Hiện</button>
+                        <div class="input-row">
+                            <span class="input-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="5" y="10.5" width="14" height="9" rx="2.4" stroke="currentColor" stroke-width="1.8"/>
+                                    <path d="M8 10.5V8a4 4 0 0 1 7.2-2.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                </svg>
+                            </span>
+                            <input class="input" id="password" name="password" type="password" placeholder="Nhập mật khẩu">
+                        </div>
+                        <button class="toggle-btn" type="button" id="togglePassword" aria-label="Hiện mật khẩu" title="Hiện mật khẩu">
+                            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                <circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -409,13 +556,13 @@
                         <input type="checkbox" id="rememberMe" checked>
                         Ghi nhớ tên đăng nhập
                     </label>
-                    <button class="link-btn" type="button" id="clearSavedUser">Dùng tài khoản khác</button>
+                    <a class="link-btn" href="forgot-password.html" id="forgotPasswordLink">Quên mật khẩu?</a>
                 </div>
 
                 <button class="submit-btn" type="submit" id="submitBtn">Đăng nhập</button>
 
-                <div class="hint">
-                    Phiên làm việc được lưu ở trình duyệt hiện tại. Sau khi đăng nhập, hệ thống sẽ mở dashboard chính.
+                <div class="signup-row">
+                    Bạn chưa có tài khoản? <a href="register.html">Đăng ký</a>
                 </div>
             </form>
         </section>
@@ -425,13 +572,19 @@
         const AUTH_KEY = 'nks-auth-session';
         const USER_KEY  = 'nks-login-username';
 
-        const savedUserBox    = document.getElementById('savedUserBox');
-        const usernameInput   = document.getElementById('username');
-        const passwordInput   = document.getElementById('password');
-        const errorBox        = document.getElementById('errorBox');
-        const rememberMe      = document.getElementById('rememberMe');
-        const submitBtn       = document.getElementById('submitBtn');
+
+        const card             = document.querySelector('.card');
+        const usernameField    = document.getElementById('usernameField');
+        const returningUserRow = document.getElementById('returningUserRow');
+        const greetingText     = document.getElementById('greetingText');
+        const greetingName     = document.getElementById('greetingName');
+        const usernameInput    = document.getElementById('username');
+        const passwordInput    = document.getElementById('password');
+        const errorBox         = document.getElementById('errorBox');
+        const rememberMe       = document.getElementById('rememberMe');
+        const submitBtn        = document.getElementById('submitBtn');
         const togglePasswordBtn = document.getElementById('togglePassword');
+        const eyeIcon          = document.getElementById('eyeIcon');
 
         function readSession() {
             try { return JSON.parse(sessionStorage.getItem(AUTH_KEY)) || null; }
@@ -447,36 +600,50 @@
             errorBox.classList.remove('show');
         }
 
+        function timeGreeting() {
+            const h = new Date().getHours();
+            if (h < 11) return 'Chào buổi sáng';
+            if (h < 14) return 'Chào buổi trưa';
+            if (h < 18) return 'Chào buổi chiều';
+            return 'Chào buổi tối';
+        }
+
+        // Yêu cầu: lần truy cập thứ 2+ → hiển thị Username, chỉ yêu cầu nhập Pass
         function renderSavedUsername() {
             const saved = localStorage.getItem(USER_KEY) || '';
-            if (!saved) return;
-            savedUserBox.innerHTML = 'Tài khoản đã nhớ:<strong>' + saved + '</strong>';
-            savedUserBox.classList.add('show');
-            usernameInput.value    = saved;
-            usernameInput.readOnly = true;
-            usernameInput.style.background = '#f8fafc';
+            if (!saved) {
+                card.classList.remove('returning');
+                return;
+            }
+            greetingText.textContent = timeGreeting();
+            greetingName.textContent = saved;
+            card.classList.add('returning');
         }
 
         // Nếu đã có token hợp lệ → vào thẳng dashboard
-        if (readSession()?.access_token) window.location.replace('index.html');
+        if (readSession()?.access_token) window.location.replace('user-info.html');
 
         renderSavedUsername();
-        if (!usernameInput.value) usernameInput.focus();
-        else passwordInput.focus();
+        if (card.classList.contains('returning')) passwordInput.focus();
+        else usernameInput.focus();
 
         togglePasswordBtn.addEventListener('click', () => {
             const isPass = passwordInput.type === 'password';
             passwordInput.type = isPass ? 'text' : 'password';
-            togglePasswordBtn.textContent = isPass ? 'Ẩn' : 'Hiện';
+            togglePasswordBtn.setAttribute('aria-label', isPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+            togglePasswordBtn.setAttribute('title', isPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+            // Gạch chéo icon mắt khi đang hiện mật khẩu
+            eyeIcon.innerHTML = isPass
+                ? '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+                : '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/>';
         });
 
-        document.getElementById('clearSavedUser').addEventListener('click', () => {
+        // Icon "chuyển đổi" → cho phép người dùng đăng nhập bằng tài khoản khác
+        document.getElementById('switchAccountBtn').addEventListener('click', () => {
             localStorage.removeItem(USER_KEY);
-            usernameInput.readOnly = false;
-            usernameInput.value    = '';
-            usernameInput.style.background = '';
-            savedUserBox.classList.remove('show');
-            savedUserBox.innerHTML = '';
+            card.classList.remove('returning');
+            usernameInput.value = '';
+            passwordInput.value = '';
             usernameInput.focus();
         });
 
@@ -484,7 +651,10 @@
             e.preventDefault();
             clearError();
 
-            const username = usernameInput.value.trim();
+            const isReturning = card.classList.contains('returning');
+            const username = isReturning
+                ? (greetingName.textContent || '').trim()
+                : usernameInput.value.trim();
             const password = passwordInput.value;
 
             if (!username) { showError('Vui lòng nhập tên đăng nhập.'); usernameInput.focus(); return; }
