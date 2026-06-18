@@ -1,0 +1,79 @@
+/**
+ * api/nks-account.js — Vercel Serverless Function
+ * Relay POST requests đến account.nks.vn & online.nks.vn
+ */
+
+const ACCOUNT_BASE = 'https://account.nks.vn/api';
+const ONLINE_BASE  = 'https://online.nks.vn/api';
+
+const ROUTES = {
+  login:               { base: ACCOUNT_BASE, ep: 'nks/user/login'        },
+  get_user:            { base: ACCOUNT_BASE, ep: 'nks/user'              },
+  update_info:         { base: ACCOUNT_BASE, ep: 'nks/user/updateInfo'   },
+  update_password:     { base: ACCOUNT_BASE, ep: 'nks/user/updatePass'   },
+  update_avatar:       { base: ACCOUNT_BASE, ep: 'nks/user/updateAvatar' },
+  update_cccd:         { base: ACCOUNT_BASE, ep: 'nks/user/updateCccd'   },
+  get_provinces:       { base: ONLINE_BASE,  ep: 'nks/provinces'         },
+  get_administratives: { base: ONLINE_BASE,  ep: 'nks/administratives'   },
+};
+
+async function nksPost(baseUrl, endpoint, body = {}) {
+  const url   = `${baseUrl}/${endpoint}`;
+  const ctrl  = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const r = await fetch(url, {
+      method:  'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent':   'Mozilla/5.0 NKS-Proxy/2.0',
+        'Accept':       'application/json',
+      },
+      body:   new URLSearchParams(body).toString(),
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    const text = await r.text();
+    try   { return { ok: r.ok, status: r.status, data: JSON.parse(text) }; }
+    catch { return { ok: false, status: r.status, data: { message: text.substring(0, 300) } }; }
+  } catch (e) {
+    clearTimeout(timer);
+    return { ok: false, status: 502, data: { message: e.name === 'AbortError' ? 'Timeout 15s' : e.message } };
+  }
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin',  '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' });
+
+  // Parse body
+  let body = req.body;
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+  body = body || {};
+
+  const { action, ...params } = body;
+
+  if (!action || !ROUTES[action]) {
+    return res.status(400).json({
+      error: `action "${action}" không hợp lệ`,
+      valid: Object.keys(ROUTES),
+    });
+  }
+
+  const { base, ep } = ROUTES[action];
+
+  // Bổ sung thông tin login
+  if (action === 'login') {
+    params.ip_address = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || '';
+    params.location   = '';
+    params.fbtoken    = params.fbtoken || '';
+    params.system     = params.system  || 'NKS';
+    params.device     = params.device  || 'Web Browser';
+  }
+
+  const result = await nksPost(base, ep, params);
+  return res.status(result.ok ? 200 : result.status).json(result.data);
+}
