@@ -863,6 +863,22 @@
         toast('✅ Đã cập nhật!');
     }
 
+    // ── NKS API error helpers ────────────────────────────────────────────
+    // NKS trả nhiều dạng: {status:'error'}, {success:false}, {code:0,message:'...'}, {error:'...'}
+    function isNksError(d) {
+        if (!d) return true;
+        if (d.status  === 'error')                             return true;
+        if (d.success === false)                               return true;
+        if (typeof d.error === 'string' && d.error)            return true;
+        if (d.code !== undefined && !d.code && d.message)     return true;
+        return false;
+    }
+    function nksErrMsg(d) {
+        return d?.message || d?.msg || d?.error
+            || (typeof d === 'string' ? d : null)
+            || JSON.stringify(d).substring(0, 200);
+    }
+
     // ── Save info ────────────────────────────────────────────────────────
 
     async function saveInfo() {
@@ -877,11 +893,13 @@
                 province:       document.getElementById('infoProvince').value,
                 administrative: document.getElementById('infoAdministrative').value,
             });
-            if (data.status === 'error' || data.error) throw new Error(data.message || data.error || 'Lỗi không xác định');
+            console.log('[saveInfo] response:', data);
+            if (isNksError(data)) throw new Error(nksErrMsg(data));
             showMsg('infoMsg', '✅ Cập nhật thông tin thành công!', 'success');
             toast('✅ Lưu thành công!');
             await loadUserInfo();
         } catch(e) {
+            console.error('[saveInfo]', e.message);
             showMsg('infoMsg', '❌ ' + e.message, 'error');
         } finally {
             setLoading('saveInfoBtn', false);
@@ -1041,7 +1059,8 @@
         setLoading('saveAvatarBtn', true);
         try {
             const data = await apiCall('update_avatar', { avatar: _avatarBase64 });
-            if (data.status === 'error' || data.error) throw new Error(data.message || data.error || 'Lỗi không xác định');
+            console.log('[saveAvatar] response:', data);
+            if (isNksError(data)) throw new Error(nksErrMsg(data));
             showMsg('avatarMsg', '✅ Cập nhật ảnh đại diện thành công!', 'success');
             toast('✅ Ảnh đại diện đã được cập nhật!');
             _avatarBase64 = '';
@@ -1072,7 +1091,8 @@
         setLoading('savePassBtn', true);
         try {
             const data = await apiCall('update_password', { old_password: old, password: np });
-            if (data.status === 'error' || data.error) throw new Error(data.message || data.error || 'Lỗi không xác định');
+            console.log('[savePassword] response:', data);
+            if (isNksError(data)) throw new Error(nksErrMsg(data));
             showMsg('passMsg', '✅ Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
             toast('✅ Đã đổi mật khẩu!');
             document.getElementById('oldPass').value    = '';
@@ -1170,7 +1190,8 @@
         try {
             const [frontB64, backB64] = await Promise.all([fileToBase64(frontFile), fileToBase64(backFile)]);
             const data = await apiCall('update_cccd', { front: frontB64, back: backB64, number, date, place });
-            if (data.status === 'error' || data.error) throw new Error(data.message || data.error || 'Lỗi không xác định');
+            console.log('[saveCccd] response:', data);
+            if (isNksError(data)) throw new Error(nksErrMsg(data));
             showMsg('cccdMsg', '✅ Cập nhật CCCD thành công! Đang chờ xét duyệt.', 'success');
             toast('✅ CCCD đã được gửi!');
         } catch(e) {

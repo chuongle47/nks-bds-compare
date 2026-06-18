@@ -621,7 +621,7 @@
         }
 
         // Nếu đã có token hợp lệ → vào thẳng dashboard
-        if (readSession()?.access_token) window.location.replace('user-info.html');
+        if (readSession()?.access_token) window.location.replace('index.html');
 
         renderSavedUsername();
         if (card.classList.contains('returning')) passwordInput.focus();

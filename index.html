@@ -536,7 +536,7 @@
 
     function isAuthenticated() {
         const session = getAuthSession();
-        return !!(session && session.username);
+        return !!(session && (session.access_token || session.username));
     }
 
     function requireAuth() {

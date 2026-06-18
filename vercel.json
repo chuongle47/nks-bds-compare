@@ -1,7 +1,3 @@
 {
-  "version": 2,
-  "rewrites": [
-    { "source": "/api/nks-account", "destination": "/api/proxy.js" },
-    { "source": "/api/proxy",       "destination": "/api/proxy.js" }
-  ]
+  "version": 2
 }
