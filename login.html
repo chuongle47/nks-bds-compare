@@ -621,7 +621,7 @@
         }
 
         // Nếu đã có token hợp lệ → vào thẳng dashboard
-        if (readSession()?.access_token) window.location.replace('index.html');
+        if (readSession()?.access_token) window.location.replace('user-info.html');
 
         renderSavedUsername();
         if (card.classList.contains('returning')) passwordInput.focus();
@@ -670,6 +670,7 @@
                     body:    JSON.stringify({ action: 'login', username, password }),
                 });
                 const json = await res.json();
+                console.log('[login] response status:', res.status, '| body:', JSON.stringify(json).substring(0, 300));
 
                 // Lấy access_token từ nhiều cấu trúc phản hồi khác nhau
                 const token = json.access_token
@@ -702,7 +703,8 @@
                 window.location.replace('index.html');
 
             } catch (err) {
-                showError('❌ Không thể kết nối đến máy chủ. Vui lòng thử lại.');
+                console.error('[login] fetch error:', err);
+                showError('❌ Lỗi: ' + (err.message || 'Không thể kết nối đến máy chủ.'));
                 submitBtn.disabled    = false;
                 submitBtn.textContent = 'Đăng nhập';
             }
