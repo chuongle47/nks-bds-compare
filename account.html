@@ -286,18 +286,13 @@
                         </div>
                         <div class="form-group full">
                             <label>Email</label>
-                            <input class="input" type="email" id="infoEmail" placeholder="email@example.com">
+                            <input class="input" type="email" id="infoEmail" placeholder="email@example.com" disabled title="Email không cập nhật qua API này">
                         </div>
+                        <!-- API thật chỉ có 2 cấp địa chỉ: Tỉnh/Thành (nks/provinces) và Phường/Xã (nks/administratives) — không còn cấp Quận/Huyện -->
                         <div class="form-group">
                             <label>Tỉnh / Thành phố</label>
-                            <select class="input" id="infoProvince" onchange="loadDistricts()">
+                            <select class="input" id="infoProvince" onchange="loadAdministratives()">
                                 <option value="">— Chọn tỉnh —</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Quận / Huyện</label>
-                            <select class="input" id="infoDistrict" onchange="loadWards()">
-                                <option value="">— Chọn quận —</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -309,6 +304,7 @@
                         <div class="form-group full">
                             <label>Địa chỉ chi tiết</label>
                             <input class="input" type="text" id="infoAddress" placeholder="Số nhà, tên đường...">
+                            <small style="color:var(--muted);font-size:11px">⚠️ API <code>updateInfo</code> chưa thấy field địa chỉ chi tiết trong tài liệu — cần xác nhận với NKS field này có được lưu không.</small>
                         </div>
                     </div>
                     <div class="form-actions">
@@ -363,9 +359,19 @@
             </div>
             <div class="panel-body">
                 <form id="cccdForm" onsubmit="submitCccd(event)">
-                    <div class="form-group" style="margin-bottom:16px">
-                        <label>Số CCCD / CMND</label>
-                        <input class="input" type="text" id="cccdNumber" placeholder="012345678912" maxlength="12">
+                    <div class="form-grid" style="margin-bottom:16px">
+                        <div class="form-group">
+                            <label>Số CCCD / CMND</label>
+                            <input class="input" type="text" id="cccdNumber" placeholder="012345678912" maxlength="12">
+                        </div>
+                        <div class="form-group">
+                            <label>Ngày cấp</label>
+                            <input class="input" type="date" id="cccdDate">
+                        </div>
+                        <div class="form-group full">
+                            <label>Nơi cấp</label>
+                            <input class="input" type="text" id="cccdPlace" placeholder="Cục Cảnh sát QLHC về TTXH">
+                        </div>
                     </div>
                     <div class="cccd-grid">
                         <div>
@@ -473,10 +479,11 @@
             document.getElementById('infoLoadingSkeleton').style.display = 'none';
             document.getElementById('infoForm').style.display = 'block';
 
-            // Sidebar profile — field thật là "name", không có "username" riêng (dùng từ session)
+            // API thật tách firstname/lastname — không có field "name" gộp sẵn
             const session  = getSession();
-            const name     = data.name || session?.username || 'Người dùng';
-            const username = session?.username || '';
+            const name     = [data.firstname, data.lastname].filter(Boolean).join(' ').trim()
+                              || data.name || session?.username || 'Người dùng';
+            const username = session?.username || data.username || '';
 
             document.getElementById('profileName').textContent     = name;
             document.getElementById('profileUsername').textContent = username ? '@' + username : '';
@@ -500,17 +507,19 @@
                 sessionStorage.setItem(AUTH_KEY, JSON.stringify(session));
             }
 
-            // Fill form — field thật: name, phone, email, add_street, add_province, add_district, add_ward
-            document.getElementById('infoFullname').value = data.name        || '';
-            document.getElementById('infoPhone').value    = data.phone       || '';
-            document.getElementById('infoEmail').value    = data.email       || '';
-            document.getElementById('infoAddress').value  = data.add_street  || '';
+            // Fill form — field thật: firstname, lastname, phone, email (đọc-only), province
+            document.getElementById('infoFullname').value = name;
+            document.getElementById('infoPhone').value    = data.phone || '';
+            document.getElementById('infoEmail').value    = data.email || '';
+            document.getElementById('infoAddress').value  = data.address || '';
 
-            // Load provinces then set saved values (field thật: add_province/add_district/add_ward)
-            await loadProvinces(data.add_province, data.add_district, data.add_ward);
+            // Load tỉnh/thành rồi set giá trị đã lưu (field thật: province — 2 cấp, không có district)
+            await loadProvinces(data.province, data.administrative ?? data.ward);
 
             // Prefill CCCD nếu đã có sẵn
-            if (data.id_number) document.getElementById('cccdNumber').value = data.id_number;
+            if (data.number || data.id_number) document.getElementById('cccdNumber').value = data.number || data.id_number;
+            if (data.date   || data.id_date)   document.getElementById('cccdDate').value   = data.date   || data.id_date;
+            if (data.place  || data.id_place)  document.getElementById('cccdPlace').value  = data.place  || data.id_place;
             if (data.cccd_front) {
                 const img = document.getElementById('cccdFrontPreview');
                 img.src = data.cccd_front; img.style.display = 'block';
@@ -528,78 +537,49 @@
         }
     }
 
-    // ── Provinces / Districts / Wards ────────────────────────────────────────
-    // API thật: get_provinces trả về CẢ CÂY địa chỉ lồng nhau trong 1 lần gọi.
-    // Mỗi tỉnh có field "title" (không phải "name") và field "administratives"
-    // chứa sẵn danh sách quận/huyện. Nếu quận/huyện cũng có field con chứa
-    // phường/xã (vd "wards" hoặc "administratives" lồng tiếp), code tự dò tìm.
-    let addressTree = []; // cache cây địa chỉ sau khi tải lần đầu
+    // ── Tỉnh / Phường-Xã (2 cấp) ─────────────────────────────────────────────
+    // API thật: nks/provinces (body: country_id) và nks/administratives (body: province_id)
+    // là 2 endpoint RIÊNG — phải gọi administratives mỗi khi đổi tỉnh, không có sẵn cây lồng nhau.
+    // VN_COUNTRY_ID = 192 theo tài liệu (Việt Nam). Field trả về dùng "title" theo ghi nhận thực tế.
+    const VN_COUNTRY_ID = 192;
+    let provincesCache = []; // cache danh sách tỉnh (ít thay đổi, chỉ tải 1 lần)
 
-    function findChildList(node) {
-        // Tìm field chứa danh sách con (quận trong tỉnh, hoặc phường trong quận)
-        if (!node) return [];
-        return node.administratives || node.wards || node.districts || node.children || [];
-    }
-
-    async function loadProvinces(savedProvince, savedDistrict, savedWard) {
+    async function loadProvinces(savedProvince, savedWard) {
         try {
-            const res = await nksApi('get_provinces');
+            const res = await nksApi('get_provinces', { country_id: VN_COUNTRY_ID });
             console.log('[get_provinces] response:', res);
             if (res.success === false) throw new Error(res.message || 'Không tải được danh sách tỉnh/thành');
 
-            addressTree = Array.isArray(res) ? res : (res.data || []);
+            provincesCache = Array.isArray(res) ? res : (res.data || []);
 
             const sel = document.getElementById('infoProvince');
             sel.innerHTML = '<option value="">— Chọn tỉnh —</option>'
-                + addressTree.map(p => `<option value="${p.id}"${p.id == savedProvince ? ' selected' : ''}>${p.title}</option>`).join('');
+                + provincesCache.map(p => `<option value="${p.id}"${p.id == savedProvince ? ' selected' : ''}>${p.title}</option>`).join('');
 
-            if (savedProvince) {
-                populateDistricts(savedProvince, savedDistrict);
-                if (savedDistrict) populateWards(savedProvince, savedDistrict, savedWard);
-            }
+            if (savedProvince) await loadAdministratives(savedProvince, savedWard);
         } catch (err) {
             console.warn('[get_provinces] failed:', err.message);
         }
     }
 
-    // Gọi khi người dùng đổi <select> tỉnh — không gọi lại API, chỉ lọc cây đã cache
-    function loadDistricts() {
-        const provinceId = document.getElementById('infoProvince').value;
-        document.getElementById('infoWard').innerHTML = '<option value="">— Chọn phường —</option>';
-        if (!provinceId) {
-            document.getElementById('infoDistrict').innerHTML = '<option value="">— Chọn quận —</option>';
-            return;
-        }
-        populateDistricts(provinceId);
-    }
-
-    function populateDistricts(provinceId, savedDistrict) {
-        const province = addressTree.find(p => p.id == provinceId);
-        const districts = findChildList(province);
-        const sel = document.getElementById('infoDistrict');
-        sel.innerHTML = '<option value="">— Chọn quận —</option>'
-            + districts.map(d => `<option value="${d.id}"${d.id == savedDistrict ? ' selected' : ''}>${d.title}</option>`).join('');
-    }
-
-    // Gọi khi người dùng đổi <select> quận — chỉ lọc cây đã cache
-    function loadWards() {
-        const provinceId = document.getElementById('infoProvince').value;
-        const districtId = document.getElementById('infoDistrict').value;
-        if (!provinceId || !districtId) {
-            document.getElementById('infoWard').innerHTML = '<option value="">— Chọn phường —</option>';
-            return;
-        }
-        populateWards(provinceId, districtId);
-    }
-
-    function populateWards(provinceId, districtId, savedWard) {
-        const province = addressTree.find(p => p.id == provinceId);
-        const districts = findChildList(province);
-        const district = districts.find(d => d.id == districtId);
-        const wards = findChildList(district);
+    // Gọi khi người dùng đổi <select> tỉnh — phải gọi API administratives mới (không cache theo cây)
+    async function loadAdministratives(provinceId, savedWard) {
+        provinceId = provinceId || document.getElementById('infoProvince').value;
         const sel = document.getElementById('infoWard');
-        sel.innerHTML = '<option value="">— Chọn phường —</option>'
-            + wards.map(w => `<option value="${w.id}"${w.id == savedWard ? ' selected' : ''}>${w.title}</option>`).join('');
+        sel.innerHTML = '<option value="">— Chọn phường —</option>';
+        if (!provinceId) return;
+
+        try {
+            const res = await nksApi('get_administratives', { province_id: provinceId });
+            console.log('[get_administratives] response:', res);
+            if (res.success === false) throw new Error(res.message || 'Không tải được danh sách phường/xã');
+
+            const wards = Array.isArray(res) ? res : (res.data || []);
+            sel.innerHTML = '<option value="">— Chọn phường —</option>'
+                + wards.map(w => `<option value="${w.id}"${w.id == savedWard ? ' selected' : ''}>${w.title}</option>`).join('');
+        } catch (err) {
+            console.warn('[get_administratives] failed:', err.message);
+        }
     }
 
     // ── Submit: update info ──────────────────────────────────────────────────
@@ -609,14 +589,19 @@
         const btn = document.getElementById('infoSubmitBtn');
         btn.disabled = true; btn.textContent = 'Đang lưu...';
         try {
+            // API thật tách firstname/lastname — tách chuỗi họ-tên theo từ cuối cùng
+            const fullname = document.getElementById('infoFullname').value.trim();
+            const parts     = fullname.split(/\s+/);
+            const lastname  = parts.pop() || '';
+            const firstname = parts.join(' ');
+
             const data = await nksApi('update_info', {
-                name:         document.getElementById('infoFullname').value.trim(),
-                phone:        document.getElementById('infoPhone').value.trim(),
-                email:        document.getElementById('infoEmail').value.trim(),
-                add_street:   document.getElementById('infoAddress').value.trim(),
-                add_province: document.getElementById('infoProvince').value,
-                add_district: document.getElementById('infoDistrict').value,
-                add_ward:     document.getElementById('infoWard').value,
+                firstname: firstname,
+                lastname:  lastname,
+                phone:     document.getElementById('infoPhone').value.trim(),
+                province:  document.getElementById('infoProvince').value,
+                // Email không sửa được qua API này (không có trong tài liệu) — không gửi
+                // infoAddress / infoWard hiện chưa có field tương ứng đã xác nhận trong tài liệu
             });
             console.log('[update_info] response:', data);
             if (data.success === false) throw new Error(data.message || 'Cập nhật thất bại');
@@ -643,7 +628,7 @@
         try {
             const data = await nksApi('update_password', {
                 old_password: document.getElementById('passOld').value,
-                new_password: newPass,
+                password:     newPass, // API thật dùng field "password", không phải "new_password"
             });
             if (data.success === false) throw new Error(data.message || 'Đổi mật khẩu thất bại');
             showAlert('passAlert', 'success', '✅ Đổi mật khẩu thành công!');
@@ -713,9 +698,11 @@
         e.preventDefault();
         const frontFile = document.getElementById('cccdFrontInput').files[0];
         const backFile  = document.getElementById('cccdBackInput').files[0];
-        const idNumber  = document.getElementById('cccdNumber').value.trim();
+        const number    = document.getElementById('cccdNumber').value.trim();
+        const date       = document.getElementById('cccdDate').value;
+        const place      = document.getElementById('cccdPlace').value.trim();
 
-        if (!idNumber && !frontFile && !backFile) {
+        if (!number && !frontFile && !backFile) {
             showAlert('cccdAlert', 'error', '❌ Vui lòng nhập số CCCD hoặc chọn ảnh!');
             return;
         }
@@ -724,7 +711,10 @@
         btn.disabled = true; btn.textContent = 'Đang tải lên...';
         try {
             const params = {};
-            if (idNumber) params.id_number = idNumber;
+            // API thật: number, date, place, front, back (KHÔNG phải id_number)
+            if (number) params.number = number;
+            if (date)   params.date   = date;
+            if (place)  params.place  = place;
             if (frontFile) params.front = await fileToBase64(frontFile);
             if (backFile)  params.back  = await fileToBase64(backFile);
 
