@@ -462,15 +462,24 @@
 
     async function loadUserInfo() {
         try {
-            const data = await nksApi('get_user');
+            const res = await nksApi('get_user');
+            console.log('[get_user] response:', res);
+
+            if (res.success === false) throw new Error(res.message || 'Không lấy được thông tin tài khoản');
+
+            // API thật bọc data trong field "data" — fallback về res nếu API thay đổi cấu trúc
+            const data = res.data ?? res;
 
             document.getElementById('infoLoadingSkeleton').style.display = 'none';
             document.getElementById('infoForm').style.display = 'block';
 
-            // Sidebar profile
-            const name = data.fullname || data.name || data.username || 'Người dùng';
+            // Sidebar profile — field thật là "name", không có "username" riêng (dùng từ session)
+            const session  = getSession();
+            const name     = data.name || session?.username || 'Người dùng';
+            const username = session?.username || '';
+
             document.getElementById('profileName').textContent     = name;
-            document.getElementById('profileUsername').textContent = '@' + (data.username || '');
+            document.getElementById('profileUsername').textContent = username ? '@' + username : '';
             document.getElementById('profileEmail').textContent    = data.email || '';
 
             // Avatar
@@ -479,25 +488,39 @@
                 img.src = data.avatar; img.style.display = 'block';
                 document.getElementById('profileAvatarInitial').style.display = 'none';
             } else {
+                document.getElementById('profileAvatarInitial').style.display = 'flex';
                 document.getElementById('profileAvatarInitial').textContent = name.charAt(0).toUpperCase();
             }
 
-            // Update session display name
-            const session = getSession();
+            // Cập nhật session với data mới nhất
             if (session) {
                 session.name   = name;
                 session.avatar = data.avatar || '';
+                session.email  = data.email || session.email || '';
                 sessionStorage.setItem(AUTH_KEY, JSON.stringify(session));
             }
 
-            // Fill form
-            document.getElementById('infoFullname').value = data.fullname || data.name || '';
-            document.getElementById('infoPhone').value    = data.phone   || '';
-            document.getElementById('infoEmail').value    = data.email   || '';
-            document.getElementById('infoAddress').value  = data.address || '';
+            // Fill form — field thật: name, phone, email, add_street, add_province, add_district, add_ward
+            document.getElementById('infoFullname').value = data.name        || '';
+            document.getElementById('infoPhone').value    = data.phone       || '';
+            document.getElementById('infoEmail').value    = data.email       || '';
+            document.getElementById('infoAddress').value  = data.add_street  || '';
 
-            // Load provinces then set saved values
-            await loadProvinces(data.province_id, data.district_id, data.ward_id);
+            // Load provinces then set saved values (field thật: add_province/add_district/add_ward)
+            await loadProvinces(data.add_province, data.add_district, data.add_ward);
+
+            // Prefill CCCD nếu đã có sẵn
+            if (data.id_number) document.getElementById('cccdNumber').value = data.id_number;
+            if (data.cccd_front) {
+                const img = document.getElementById('cccdFrontPreview');
+                img.src = data.cccd_front; img.style.display = 'block';
+                document.getElementById('cccdFrontLabel').textContent = '✓ Đã có ảnh (chọn để thay)';
+            }
+            if (data.cccd_back) {
+                const img = document.getElementById('cccdBackPreview');
+                img.src = data.cccd_back; img.style.display = 'block';
+                document.getElementById('cccdBackLabel').textContent = '✓ Đã có ảnh (chọn để thay)';
+            }
 
         } catch (err) {
             document.getElementById('infoLoadingSkeleton').innerHTML =
@@ -509,39 +532,42 @@
 
     async function loadProvinces(savedProvince, savedDistrict, savedWard) {
         try {
-            const data = await nksApi('get_provinces');
-            const list = Array.isArray(data) ? data : (data.data || []);
+            const res  = await nksApi('get_provinces');
+            console.log('[get_provinces] response:', res);
+            const list = Array.isArray(res) ? res : (Array.isArray(res.data) ? res.data : (res.data?.data || []));
             const sel  = document.getElementById('infoProvince');
             sel.innerHTML = '<option value="">— Chọn tỉnh —</option>'
                 + list.map(p => `<option value="${p.id}"${p.id == savedProvince ? ' selected' : ''}>${p.name}</option>`).join('');
             if (savedProvince) await loadDistricts(savedDistrict, savedWard);
-        } catch { /* provinces optional */ }
+        } catch (err) { console.warn('[get_provinces] failed:', err.message); }
     }
 
     async function loadDistricts(savedDistrict, savedWard) {
         const provinceId = document.getElementById('infoProvince').value;
         if (!provinceId) return;
         try {
-            const data = await nksApi('get_administratives', { province_id: provinceId });
-            const list = Array.isArray(data) ? data : (data.districts || data.data || []);
+            const res  = await nksApi('get_administratives', { province_id: provinceId });
+            console.log('[get_administratives:district] response:', res);
+            const list = Array.isArray(res) ? res : (Array.isArray(res.data) ? res.data : (res.districts || res.data?.data || res.data?.districts || []));
             const sel  = document.getElementById('infoDistrict');
             sel.innerHTML = '<option value="">— Chọn quận —</option>'
                 + list.map(d => `<option value="${d.id}"${d.id == savedDistrict ? ' selected' : ''}>${d.name}</option>`).join('');
-            if (savedDistrict) await loadWards(savedWard, list.find(d => d.id == savedDistrict));
-        } catch { /* districts optional */ }
+            if (savedDistrict) await loadWards(savedWard);
+        } catch (err) { console.warn('[get_administratives:district] failed:', err.message); }
     }
 
-    async function loadWards(savedWard, district) {
+    async function loadWards(savedWard) {
         const districtEl = document.getElementById('infoDistrict');
         const districtId = districtEl.value;
         if (!districtId) return;
         try {
-            const data = await nksApi('get_administratives', { district_id: districtId });
-            const list = Array.isArray(data) ? data : (data.wards || data.data || []);
+            const res  = await nksApi('get_administratives', { district_id: districtId });
+            console.log('[get_administratives:ward] response:', res);
+            const list = Array.isArray(res) ? res : (Array.isArray(res.data) ? res.data : (res.wards || res.data?.data || res.data?.wards || []));
             const sel  = document.getElementById('infoWard');
             sel.innerHTML = '<option value="">— Chọn phường —</option>'
                 + list.map(w => `<option value="${w.id}"${w.id == savedWard ? ' selected' : ''}>${w.name}</option>`).join('');
-        } catch { /* wards optional */ }
+        } catch (err) { console.warn('[get_administratives:ward] failed:', err.message); }
     }
 
     // ── Submit: update info ──────────────────────────────────────────────────
@@ -552,14 +578,15 @@
         btn.disabled = true; btn.textContent = 'Đang lưu...';
         try {
             const data = await nksApi('update_info', {
-                fullname:    document.getElementById('infoFullname').value.trim(),
-                phone:       document.getElementById('infoPhone').value.trim(),
-                email:       document.getElementById('infoEmail').value.trim(),
-                address:     document.getElementById('infoAddress').value.trim(),
-                province_id: document.getElementById('infoProvince').value,
-                district_id: document.getElementById('infoDistrict').value,
-                ward_id:     document.getElementById('infoWard').value,
+                name:         document.getElementById('infoFullname').value.trim(),
+                phone:        document.getElementById('infoPhone').value.trim(),
+                email:        document.getElementById('infoEmail').value.trim(),
+                add_street:   document.getElementById('infoAddress').value.trim(),
+                add_province: document.getElementById('infoProvince').value,
+                add_district: document.getElementById('infoDistrict').value,
+                add_ward:     document.getElementById('infoWard').value,
             });
+            console.log('[update_info] response:', data);
             if (data.success === false) throw new Error(data.message || 'Cập nhật thất bại');
             showAlert('infoAlert', 'success', '✅ Cập nhật thông tin thành công!');
             await loadUserInfo(); // Reload để cập nhật sidebar
@@ -617,12 +644,17 @@
         // Resize & convert to base64
         const base64 = await fileToBase64(file);
         try {
-            const data = await nksApi('update_avatar', { avatar: base64 });
-            if (data.success === false) throw new Error(data.message || 'Cập nhật avatar thất bại');
+            const res = await nksApi('update_avatar', { avatar: base64 });
+            console.log('[update_avatar] response:', res);
+            if (res.success === false) throw new Error(res.message || 'Cập nhật avatar thất bại');
+            const newAvatar = res.data?.avatar || res.avatar || base64;
             // Update preview
             const img = document.getElementById('profileAvatarImg');
-            img.src = data.avatar || base64; img.style.display = 'block';
+            img.src = newAvatar; img.style.display = 'block';
             document.getElementById('profileAvatarInitial').style.display = 'none';
+            // Cập nhật session
+            const session = getSession();
+            if (session) { session.avatar = newAvatar; sessionStorage.setItem(AUTH_KEY, JSON.stringify(session)); }
             showAlert('infoAlert', 'success', '✅ Đã cập nhật ảnh đại diện!');
         } catch (err) {
             alert('❌ ' + err.message);
@@ -649,17 +681,23 @@
         e.preventDefault();
         const frontFile = document.getElementById('cccdFrontInput').files[0];
         const backFile  = document.getElementById('cccdBackInput').files[0];
-        if (!frontFile || !backFile) { showAlert('cccdAlert', 'error', '❌ Vui lòng chọn cả 2 mặt CCCD!'); return; }
+        const idNumber  = document.getElementById('cccdNumber').value.trim();
+
+        if (!idNumber && !frontFile && !backFile) {
+            showAlert('cccdAlert', 'error', '❌ Vui lòng nhập số CCCD hoặc chọn ảnh!');
+            return;
+        }
 
         const btn = document.getElementById('cccdSubmitBtn');
         btn.disabled = true; btn.textContent = 'Đang tải lên...';
         try {
-            const [front, back] = await Promise.all([fileToBase64(frontFile), fileToBase64(backFile)]);
-            const data = await nksApi('update_cccd', {
-                cccd_number: document.getElementById('cccdNumber').value.trim(),
-                front,
-                back,
-            });
+            const params = {};
+            if (idNumber) params.id_number = idNumber;
+            if (frontFile) params.front = await fileToBase64(frontFile);
+            if (backFile)  params.back  = await fileToBase64(backFile);
+
+            const data = await nksApi('update_cccd', params);
+            console.log('[update_cccd] response:', data);
             if (data.success === false) throw new Error(data.message || 'Cập nhật CCCD thất bại');
             showAlert('cccdAlert', 'success', '✅ Đã cập nhật CCCD thành công!');
         } catch (err) {
