@@ -529,45 +529,77 @@
     }
 
     // ── Provinces / Districts / Wards ────────────────────────────────────────
+    // API thật: get_provinces trả về CẢ CÂY địa chỉ lồng nhau trong 1 lần gọi.
+    // Mỗi tỉnh có field "title" (không phải "name") và field "administratives"
+    // chứa sẵn danh sách quận/huyện. Nếu quận/huyện cũng có field con chứa
+    // phường/xã (vd "wards" hoặc "administratives" lồng tiếp), code tự dò tìm.
+    let addressTree = []; // cache cây địa chỉ sau khi tải lần đầu
+
+    function findChildList(node) {
+        // Tìm field chứa danh sách con (quận trong tỉnh, hoặc phường trong quận)
+        if (!node) return [];
+        return node.administratives || node.wards || node.districts || node.children || [];
+    }
 
     async function loadProvinces(savedProvince, savedDistrict, savedWard) {
         try {
-            const res  = await nksApi('get_provinces');
+            const res = await nksApi('get_provinces');
             console.log('[get_provinces] response:', res);
-            const list = Array.isArray(res) ? res : (Array.isArray(res.data) ? res.data : (res.data?.data || []));
-            const sel  = document.getElementById('infoProvince');
+            if (res.success === false) throw new Error(res.message || 'Không tải được danh sách tỉnh/thành');
+
+            addressTree = Array.isArray(res) ? res : (res.data || []);
+
+            const sel = document.getElementById('infoProvince');
             sel.innerHTML = '<option value="">— Chọn tỉnh —</option>'
-                + list.map(p => `<option value="${p.id}"${p.id == savedProvince ? ' selected' : ''}>${p.name}</option>`).join('');
-            if (savedProvince) await loadDistricts(savedDistrict, savedWard);
-        } catch (err) { console.warn('[get_provinces] failed:', err.message); }
+                + addressTree.map(p => `<option value="${p.id}"${p.id == savedProvince ? ' selected' : ''}>${p.title}</option>`).join('');
+
+            if (savedProvince) {
+                populateDistricts(savedProvince, savedDistrict);
+                if (savedDistrict) populateWards(savedProvince, savedDistrict, savedWard);
+            }
+        } catch (err) {
+            console.warn('[get_provinces] failed:', err.message);
+        }
     }
 
-    async function loadDistricts(savedDistrict, savedWard) {
+    // Gọi khi người dùng đổi <select> tỉnh — không gọi lại API, chỉ lọc cây đã cache
+    function loadDistricts() {
         const provinceId = document.getElementById('infoProvince').value;
-        if (!provinceId) return;
-        try {
-            const res  = await nksApi('get_administratives', { province_id: provinceId });
-            console.log('[get_administratives:district] response:', res);
-            const list = Array.isArray(res) ? res : (Array.isArray(res.data) ? res.data : (res.districts || res.data?.data || res.data?.districts || []));
-            const sel  = document.getElementById('infoDistrict');
-            sel.innerHTML = '<option value="">— Chọn quận —</option>'
-                + list.map(d => `<option value="${d.id}"${d.id == savedDistrict ? ' selected' : ''}>${d.name}</option>`).join('');
-            if (savedDistrict) await loadWards(savedWard);
-        } catch (err) { console.warn('[get_administratives:district] failed:', err.message); }
+        document.getElementById('infoWard').innerHTML = '<option value="">— Chọn phường —</option>';
+        if (!provinceId) {
+            document.getElementById('infoDistrict').innerHTML = '<option value="">— Chọn quận —</option>';
+            return;
+        }
+        populateDistricts(provinceId);
     }
 
-    async function loadWards(savedWard) {
-        const districtEl = document.getElementById('infoDistrict');
-        const districtId = districtEl.value;
-        if (!districtId) return;
-        try {
-            const res  = await nksApi('get_administratives', { district_id: districtId });
-            console.log('[get_administratives:ward] response:', res);
-            const list = Array.isArray(res) ? res : (Array.isArray(res.data) ? res.data : (res.wards || res.data?.data || res.data?.wards || []));
-            const sel  = document.getElementById('infoWard');
-            sel.innerHTML = '<option value="">— Chọn phường —</option>'
-                + list.map(w => `<option value="${w.id}"${w.id == savedWard ? ' selected' : ''}>${w.name}</option>`).join('');
-        } catch (err) { console.warn('[get_administratives:ward] failed:', err.message); }
+    function populateDistricts(provinceId, savedDistrict) {
+        const province = addressTree.find(p => p.id == provinceId);
+        const districts = findChildList(province);
+        const sel = document.getElementById('infoDistrict');
+        sel.innerHTML = '<option value="">— Chọn quận —</option>'
+            + districts.map(d => `<option value="${d.id}"${d.id == savedDistrict ? ' selected' : ''}>${d.title}</option>`).join('');
+    }
+
+    // Gọi khi người dùng đổi <select> quận — chỉ lọc cây đã cache
+    function loadWards() {
+        const provinceId = document.getElementById('infoProvince').value;
+        const districtId = document.getElementById('infoDistrict').value;
+        if (!provinceId || !districtId) {
+            document.getElementById('infoWard').innerHTML = '<option value="">— Chọn phường —</option>';
+            return;
+        }
+        populateWards(provinceId, districtId);
+    }
+
+    function populateWards(provinceId, districtId, savedWard) {
+        const province = addressTree.find(p => p.id == provinceId);
+        const districts = findChildList(province);
+        const district = districts.find(d => d.id == districtId);
+        const wards = findChildList(district);
+        const sel = document.getElementById('infoWard');
+        sel.innerHTML = '<option value="">— Chọn phường —</option>'
+            + wards.map(w => `<option value="${w.id}"${w.id == savedWard ? ' selected' : ''}>${w.title}</option>`).join('');
     }
 
     // ── Submit: update info ──────────────────────────────────────────────────
