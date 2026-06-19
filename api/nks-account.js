@@ -1,12 +1,15 @@
 /**
- * api/nks-account.js — Vercel Serverless Function v2.2
+ * api/nks-account.js — Vercel Serverless Function v2.3
  * Relay POST requests đến account.nks.vn & online.nks.vn
  *
- * FIXES v2.2:
- *  - Thống nhất signature nksPost(url, body) — loại bỏ phiên bản cũ 3 args
- *  - Thêm action `logout` (endpoint nks/user/logout)
- *  - Luôn trả HTTP 200 kèm data gốc — client tự xử lý logic lỗi
- *  - Timeout 25s cho upload avatar/CCCD
+ * FIXES v2.3 (theo tài liệu chính thức "NKS - User Management"):
+ *  - update_info: field thật là firstname, lastname, intro, phone, gender,
+ *    website, dob, pob, id_number, id_date, id_place, province
+ *    (KHÔNG có name/email/add_street/add_district/add_ward — NKS âm thầm
+ *    bỏ qua các field lạ và trả về user không đổi, success:true gây nhầm lẫn)
+ *  - update_password: field thật là `password` (không phải new_password)
+ *  - update_cccd: field thật là number/date/place (không phải id_number/cccd_number)
+ *  - login giữ nguyên path nks/user/login — đã xác nhận hoạt động đúng qua log thực tế
  */
 
 export const config = {
@@ -27,6 +30,7 @@ const ROUTES = {
   get_provinces:       { base: ONLINE_BASE,  ep: 'nks/provinces'         },
   get_administratives: { base: ONLINE_BASE,  ep: 'nks/administratives'   },
 };
+
 
 /**
  * nksPost(url, body)
