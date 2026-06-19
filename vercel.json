@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/api/nks-account", "destination": "/api/nks_account" }
-  ]
+  "functions": {
+    "api/nks-account.js": { "memory": 256 },
+    "api/proxy.js":       { "memory": 256 }
+  }
 }
